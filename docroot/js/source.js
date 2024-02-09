@@ -94,8 +94,8 @@ function displayRecognition(results, final) {
 }
 
 const stt = new SpeechToText();
-const source = new WebsocketEditor(`ws://${location.host}/socket`, "default", "de");
-//const source = new WebsocketSource(`ws://${location.host}/socket`, "default", "de");
+const source = new WebsocketEditor(`${location.protocol.replace('http','ws')}//${location.host}/socket`, "default", "de");
+//const source = new WebsocketSource(`${location.protocol.replace('http','ws')}//${location.host}/socket`, "default", "de");
 const transcript = new Transcript(null, "de");
 
 //let start = session.start || new Date();

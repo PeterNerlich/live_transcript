@@ -23,7 +23,7 @@ function updateLine(tid, line) {
 }
 const {calculateShouldScroll, scrollToBottom} = setupStickyScroll(document.body.parentElement);
 
-const reader = new WebsocketReader(`ws://${location.host}/socket`, "default", "uk");
+const reader = new WebsocketReader(`${location.protocol.replace('http','ws')}//${location.host}/socket`, "default", "uk");
 
 logAll(reader, "reader", ["pong"]);
 

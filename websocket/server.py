@@ -355,7 +355,7 @@ def args(l):
 
 
 async def main():
-	async with websockets.serve(handler, "localhost", 8765):
+	async with websockets.serve(handler, "0.0.0.0", 8765):
 		print("server started")
 		while True:
 			await translator.check_on_background_tasks()
