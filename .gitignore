@@ -1,0 +1,6 @@
+
+*.srt
+*.vtt
+*.txt
+
+**/__pycache__
