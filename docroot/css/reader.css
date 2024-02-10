@@ -23,6 +23,11 @@ body.error.refreshing {
     font-size: 1.5em;
   }
 }
+@media screen and (min-width: 1000px) and (min-height: 700px) {
+  #history {
+    font-size: 1.8em;
+  }
+}
 #history p {
   margin: 0.4em;
   line-height: 1.3;
@@ -47,13 +52,35 @@ body.error.refreshing {
 #history .delete {
   color: #f00;
   text-decoration: line-through;
-  display: none;
 }
 #history .insert {
   color: #bfb;
 }
 #history .equal {
   color: #eee;
+}
+
+#history.nodelete .delete {
+  display: none;
+}
+#history.hintdelete .delete {
+  display: inline-flex;
+  position: relative;
+  margin-right: -.08em;
+  min-width: .08em;
+  max-width: .3em;
+  max-height: 1em;
+  overflow: hidden;
+  text-align: left;
+}
+#history.hintdelete .delete::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, black 110%);
 }
 
 #connection-quality {
