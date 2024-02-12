@@ -159,7 +159,7 @@ stt.subscribe("results", results => {
     }
     out.push(best);
   }
-  const line = new Line({tid: new UUIDv4(), start: start, end: end, text: out.map(x=>x.transcript).join('')});
+  const line = new Line({tid: new UUIDv4(), start: start, end: end, text: out.map(x=>x.transcript).join('').trim()});
   source.submit(line.toJSON());
   start = end;
   transcript.addLine(line);
