@@ -14,6 +14,14 @@ body.error.refreshing {
   background: radial-gradient(calc(50vmin + 50vmax) at bottom, #210, #000);
 }
 
+#recognition {
+  color: #ddf;
+}
+#recognition.final {
+  color: #080;
+  font-style: italic;
+}
+
 #connection-quality {
   position: fixed;
   top: 1em;
@@ -60,14 +68,13 @@ body.error.refreshing {
   padding-right: 1em;
   opacity: .9;
 }
-#transcript i {
-  display: block;
-  overflow: hidden;
+#transcript label {
+  display: flex;
 }
-#transcript input {
-  width: 100%;
+#transcript textarea {
   box-sizing: border-box;
   padding: 0;
+  flex-grow: 1;
   font-family: inherit;
   line-height: inherit;
   color: inherit;

@@ -50,7 +50,7 @@ class SequenceMatcher {
 		this.bjunk = junk;
 		let isjunk = this.isjunk;
 		if (isjunk) {
-			for (const elt of b2j) {
+			for (const elt in b2j) {
 				if (isjunk(elt)) {
 					junk.add(elt);
 				}
@@ -66,7 +66,7 @@ class SequenceMatcher {
 		let n = b.length;
 		if (this.autojunk && n >= 200) {
 			let ntest = Math.floor(n / 100) + 1;
-			for (const elt of b2j) {
+			for (const elt in b2j) {
 				if (b2j[elt].length > ntest) {
 					popular.add(elt);
 				}
@@ -504,21 +504,21 @@ class Diff {
 	constructor(a, b) {
 		this.a = a;
 		this.b = b;
-		this.segments = 
-		this.matcher = new SequenceMatcher(undefined, a, b);
+		this.matcher = new SequenceMatcher(c => " \t".includes(c), a, b);
 	}
 
-	html() {
+	html(mutator) {
+		if (typeof mutator !== 'function') mutator = (x, tag) => x;
 		let out = "";
 		for (let [tag, alo, ahi, blo, bhi] of this.matcher.get_opcodes()) {
 			if (tag == 'replace')
-				out += `<span class="replace">${this.b.slice(blo, bhi)}</span>`;
+				out += `<span class="replace">${mutator(this.b.slice(blo, bhi), tag)}</span>`;
 			else if (tag == 'delete')
-				out += `<span class="delete">${this.a.slice(alo, ahi)}</span>`;
+				out += `<span class="delete">${mutator(this.a.slice(alo, ahi), tag)}</span>`;
 			else if (tag == 'insert')
-				out += `<span class="insert">${this.b.slice(blo, bhi)}</span>`;
+				out += `<span class="insert">${mutator(this.b.slice(blo, bhi), tag)}</span>`;
 			else if (tag == 'equal')
-				out += `<span class="equal">${this.b.slice(blo, bhi)}</span>`;
+				out += `<span class="equal">${mutator(this.b.slice(blo, bhi), tag)}</span>`;
 			else
 				throw new Error(`unknown tag tag`);
 		}

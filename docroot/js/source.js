@@ -15,23 +15,21 @@ function updateLine(line) {
     p.setAttribute("tid", line.tid);
     label = document.createElement('label');
     span = document.createElement('span');
-    i = document.createElement('i');
-    input = document.createElement('input');
+    input = document.createElement('textarea');
     input.name = line.tid;
-    i.appendChild(input);
     label.appendChild(span);
-    label.appendChild(i);
+    label.appendChild(input);
     p.appendChild(label);
     history.appendChild(p);
 
+    setTimeout(updateSize.bind(input), 0);
     //input.addEventListener('change', updateLine);
     input.addEventListener('keydown', lineNav);
 
   } else {
     label = p.querySelector('label');
     span = label.querySelector('span');
-    i = label.querySelector('i');
-    input = i.querySelector('input');
+    input = label.querySelector('textarea');
   }
 
   span.innerText = line.formatElapsedTime(todayMidnight, false);
@@ -52,7 +50,7 @@ function sortLines(lines) {
 }
 function updateLineStatus(tid) {
   const p = history.querySelector(`p[tid="${tid}"]`);
-  const content = p.querySelector('input').value;
+  const content = p.querySelector('textarea').value;
   const line = transcript.lines[tid];
   if (content == line.text) {
     p.classList.remove("changed");
@@ -60,38 +58,42 @@ function updateLineStatus(tid) {
     p.classList.add("changed");
   }
 }
+function updateSize() {
+  this.style.height = 0;
+  this.style.height = `${this.scrollHeight}px`;
+}
 
 function lineNav(e) {
   const tid = e.target.name;
-  const content = e.target.value;
+  const content = e.target.value.replaceAll(/[ ]*\n/g, ' \n');
   const line = transcript.lines[tid];
   const p = e.target.closest('p[tid]');
+  setTimeout(updateSize.bind(e.target), 0);
   setTimeout(updateLineStatus.bind(this, tid), 0);
 
-  if (!e.isComposing) {
-    if (e.key == "Enter") {
-      p.classList.add("pending");
-      source.change(tid, content).then(() => {
-        const line = transcript.lines[tid];
-        transcript.changeLine(line);
-        p.classList.remove("changed", "pending");
-      }).catch(() => {
-        p.classList.remove("pending");
-      });
-    } else if (e.key == "Escape") {
-      e.target.value = line.text;
-      p.classList.remove("changed");
-    } else if (e.key == "PageUp") {
-      if (p.previousElementSibling !== null)
-        p.previousElementSibling.querySelector('input').focus();
-    } else if (e.key == "PageDown") {
-      if (p.nextElementSibling !== null)
-        p.nextElementSibling.querySelector('input').focus();
-    } else {
-      return;
-    }
-    e.preventDefault();
+  if (e.key == "Enter" && !e.shiftKey && !e.ctrlKey) {
+    p.classList.add("pending");
+    source.change(tid, content).then(() => {
+      const line = transcript.lines[tid];
+      transcript.changeLine(line);
+      p.classList.remove("changed", "pending");
+    }).catch(() => {
+      p.classList.remove("pending");
+    });
+  } else if (e.key == "Escape") {
+    e.target.value = line.text;
+    p.classList.remove("changed");
+    console.log(`lineNav(Escape) '${content}',  '${line.text}'`);
+  } else if (e.key == "PageUp") {
+    if (p.previousElementSibling !== null)
+      p.previousElementSibling.querySelector('textarea').focus();
+  } else if (e.key == "PageDown") {
+    if (p.nextElementSibling !== null)
+      p.nextElementSibling.querySelector('textarea').focus();
+  } else {
+    return;
   }
+  e.preventDefault();
 }
 
 const {calculateShouldScroll, scrollToBottom} = setupStickyScroll(document.body.parentElement);
@@ -172,6 +174,9 @@ document.addEventListener("keydown", e => {
   if (e.composed && e.ctrlKey && (e.key === "Enter" || e.key === "Space")) {
     stt.restart();
   }
+});
+window.addEventListener("resize", e => {
+  document.querySelectorAll("#transcript [tid] textarea").forEach(input => updateSize.call(input));
 });
 
 logAll(stt, "stt");

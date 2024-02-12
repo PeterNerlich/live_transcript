@@ -68,10 +68,14 @@ body.error.refreshing {
   position: relative;
   margin-right: -.08em;
   min-width: .08em;
-  max-width: .3em;
+  max-width: .4em;
   max-height: 1em;
   overflow: hidden;
   text-align: left;
+}
+#history.hintdelete .delete i {
+  font-style: normal;
+  transform: scaleX(.5) translateX(calc(-50% - .1em));
 }
 #history.hintdelete .delete::after {
   content: "";
@@ -80,15 +84,7 @@ body.error.refreshing {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, transparent, black 110%);
-}
-
-#recognition {
-  color: #ddf;
-}
-#recognition.final {
-  color: #080;
-  font-style: italic;
+  background: linear-gradient(90deg, transparent 20%, black 160%);
 }
 
 #connection-quality {

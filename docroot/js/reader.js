@@ -14,9 +14,21 @@ function updateLine(line) {
     p.setAttribute("original", line.text);
     history.appendChild(p);
     p.innerText = line.text;
+
   } else {
     const original = p.getAttribute("original") || p.innerText;
-    p.innerHTML = new Diff(original, line.text).html();
+    p.innerHTML = new Diff(original, line.text).html((x, tag) => {
+      if (['insert', 'replace'].includes(tag)) {
+        return x.replaceAll('\n', '⏎<br>');
+      } else if (tag == 'delete') {
+        return `<i>${x.replaceAll('\n', '⏎')}</i>`;
+      } else {
+        return x.replaceAll('\n', '<br>');
+      }
+    });
+    p.querySelectorAll('.delete i').forEach(i => {
+      i.parentElement.style.width = `calc(${.5 * i.scrollWidth}px - .1em)`;
+    });
     p.setAttribute("tid", line.tid);
     p.classList.add("changed");
   }

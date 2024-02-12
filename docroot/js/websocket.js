@@ -298,9 +298,9 @@ class WebsocketClient {
 			} else {
 				this.queue.push(args);
 			}
-			const timeout = window.setTimeout(rej.bind(this, `${counter} timeout`), 6 * (this.connectionCondition.ping || 4000));
+			const timeout = window.setTimeout(rej.bind(this, `${counter} timeout`), 50 + 6 * (this.connectionCondition.ping || 4000));
 			this.waitingForConfirmation[counter] = {timeout, args, ifUnhealthy, res, rej};
-			console.log(` ${counter} waiting (${6 * (this.connectionCondition.ping || 4000)})`);
+			console.log(` ${counter} waiting (50 + ${6 * (this.connectionCondition.ping || 4000)})`);
 		});
 	}
 	confirm(counter, data) {
