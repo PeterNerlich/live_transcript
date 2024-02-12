@@ -65,7 +65,7 @@ function updateSize() {
 
 function lineNav(e) {
   const tid = e.target.name;
-  const content = e.target.value.replaceAll(/[ ]*\n/g, ' \n');
+  const content = e.target.value;
   const line = transcript.lines[tid];
   const p = e.target.closest('p[tid]');
   setTimeout(updateSize.bind(e.target), 0);
