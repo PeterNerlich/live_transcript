@@ -48,6 +48,7 @@ footer.keys code {
   background: rgba(0,0,0, .5);
   font-family: monospace;
   font-size: .8em;
+  z-index: 100;
 }
 #connection-quality i {
   display: block;
@@ -73,12 +74,18 @@ footer.keys code {
   background-image: url('../img/fast.svg');
 }
 
-#transcript p {
+#transcript p[tid] {
+  position: relative;
   margin: 0;
   text-align: left;
   font-family: monospace;
   line-height: 1.5;
   color: #ddd;
+  border: 1px solid #888;
+  border-left: 0;
+  border-right: 0;
+  margin-top: -1px;
+  z-index: 0;
 }
 #transcript span:first-of-type {
   float: left;
@@ -99,11 +106,18 @@ footer.keys code {
   border: none;
 }
 
+#transcript p[tid]:nth-of-type(even) {
+  background: #161616;
+  z-index: 1;
+}
+
 #transcript p:hover {
-  background: #222;
+  background: #222 !important;
+  position: relative;
+  z-index: 2;
 }
 #transcript p:focus-within {
-  background: #334;
+  background: #334 !important;
   color: #fff;
 }
 
