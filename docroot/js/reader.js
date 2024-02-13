@@ -49,9 +49,10 @@ logAll(reader, "reader", ["pong"]);
 
 reader.subscribe("existing", msg => {
   const lines = JSON.parse(msg.lines);
+  calculateShouldScroll();
   lines.forEach(transcript.addOrUpdateLine.bind(transcript));
   sortLines(transcript.linesSorted());
-  scrollToBottom(html);
+  scrollToBottom();
 });
 reader.subscribe(["new", "changed"], msg => {
   transcript.addOrUpdateLine(msg.line);
@@ -61,13 +62,14 @@ transcript.subscribe("new", line => {
   calculateShouldScroll();
   updateLine(line);
   //sortLines(transcript.linesSorted());
-  scrollToBottom(html);
+  scrollToBottom();
 });
 transcript.subscribe("changed", line => {
-  calculateShouldScroll();
+  let shouldScroll = calculateShouldScroll();
+  console.log(`transcript line changed: ${shouldScroll}`);
   updateLine(line);
   sortLines(transcript.linesSorted());
-  scrollToBottom(html);
+  scrollToBottom();
 });
 
 reader.connect();
