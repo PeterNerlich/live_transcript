@@ -6,22 +6,27 @@ const connectionQuality = document.getElementById("connection-quality");
 const history = document.getElementById("history");
 const recognition = document.getElementById("recognition");
 
-function displayLine(line) {
-  const p = document.createElement('p');
-  p.setAttribute("tid", line.tid);
-  p.setAttribute("original", line.text);
-  p.innerText = line.text;
-  history.appendChild(p);
-}
-
-function updateLine(tid, line) {
-  const p = history.querySelector(`p[tid="${tid}"]`);
-  if (p) {
+function updateLine(line) {
+  let p = history.querySelector(`p[tid="${line.tid}"]`);
+  if (p === null) {
+    p = document.createElement('p');
+    p.setAttribute("tid", line.tid);
+    p.setAttribute("original", line.text);
+    history.appendChild(p);
+    p.innerText = line.text;
+  } else {
     const original = p.getAttribute("original") || p.innerText;
     p.innerHTML = new Diff(original, line.text).html();
     p.setAttribute("tid", line.tid);
     p.classList.add("changed")
   }
+  return p;
+}
+function sortLines(lines) {
+  lines.forEach(line => {
+    const p = history.querySelector(`p[tid="${line.tid}"]`);
+    history.appendChild(p);
+  });
 }
 const {calculateShouldScroll, scrollToBottom} = setupStickyScroll(document.body.parentElement);
 
@@ -32,17 +37,24 @@ logAll(reader, "reader", ["pong"]);
 
 reader.subscribe("existing", msg => {
   const lines = JSON.parse(msg.lines);
-  lines.forEach(displayLine);
+  lines.forEach(transcript.addOrUpdateLine.bind(transcript));
+  sortLines(transcript.linesSorted());
   scrollToBottom(html);
 });
-reader.subscribe("new", msg => {
+reader.subscribe(["new", "changed"], msg => {
+  transcript.addOrUpdateLine(msg.line);
+});
+
+transcript.subscribe("new", line => {
   calculateShouldScroll();
-  displayLine(JSON.parse(msg.line));
+  updateLine(line);
+  //sortLines(transcript.linesSorted());
   scrollToBottom(html);
 });
-reader.subscribe("changed", msg => {
+transcript.subscribe("changed", line => {
   calculateShouldScroll();
-  updateLine(msg.tid, JSON.parse(msg.line));
+  updateLine(line);
+  sortLines(transcript.linesSorted());
   scrollToBottom(html);
 });
 

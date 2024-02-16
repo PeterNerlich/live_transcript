@@ -39,13 +39,18 @@ class Transcript {
 		};
 	}
 
-	addLine(json, start, end, text) {
-		let line;
-		if (json instanceof Line) {
-			line = json;
+	addOrUpdateLine(json) {
+		const line = this.ensureLineObject(json);
+		if (this.lines[line.tid]) {
+			return this.changeLine(line);
 		} else {
-			line = new Line(json, start, end, text);
+			return this.addLine(line);
 		}
+	}
+
+	addLine(json, start, end, text) {
+		const line = this.ensureLineObject(json, start, end, text);
+		if (this.lines[line.tid]) throw new Error(`Line ${line.tid} already exists`);
 		this.lines[line.tid] = line;
 		this.handleEvent("new", line);
 		return line;
@@ -60,10 +65,9 @@ class Transcript {
 		return line;
 	}
 
-	changeLine(tid, content) {
-		const line = this.lines[tid];
-		if (line) {
-			line.text = content;
+	changeLine(line) {
+		if (this.lines[line.tid]) {
+			line = this.lines[line.tid].update(line);
 			this.handleEvent("changed", line);
 		}
 		return line;
@@ -106,7 +110,17 @@ class Transcript {
 	}
 
 	linesSorted() {
-		return this.lines.values().toSorted((a, b) => a.start !== b.start ? a.start - b.start : a.end - b.end);
+		return Object.values(this.lines).toSorted((a, b) => a.start !== b.start ? a.start - b.start : a.end - b.end);
+	}
+
+	ensureLineObject(json, start, end, text, tid, previouslyAssociatedTids) {
+		let line;
+		if (json instanceof Line) {
+			line = json;
+		} else {
+			line = new Line(json, start, end, text, tid, previouslyAssociatedTids);
+		}
+		return line
 	}
 
 
@@ -197,6 +211,19 @@ class Line {
 			text: this.text,
 			previously_associated_tids: Array.from(this.previouslyAssociatedTids),
 		});
+	}
+
+	update(json, start, end, text, tid, previouslyAssociatedTids) {
+		const line = new Line(json, start, end, text, tid, previouslyAssociatedTids);
+		this.start = line.start;
+		this.end = line.end;
+		this.text = line.text;
+		if (this.tid !== line.tid) {
+			this.previouslyAssociatedTids.add(this.tid);
+			this.tid = line.tid;
+		}
+		this.previouslyAssociatedTids = this.previouslyAssociatedTids.union(line.previouslyAssociatedTids);
+		return this;
 	}
 
 	duplicate() {

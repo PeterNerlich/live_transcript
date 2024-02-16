@@ -7,24 +7,58 @@ const recognition = document.getElementById("recognition");
 const todayMidnight = new Date();
 todayMidnight.setHours(0,0,0,0);
 
-function displayLine(line) {
-  const p = document.createElement('p');
-  p.setAttribute("tid", line.tid);
-  const label = document.createElement('label');
-  const span = document.createElement('span');
-  span.innerText = line.formatElapsedTime(todayMidnight, false);
-  const i = document.createElement('i');
-  const input = document.createElement('input');
-  input.name = line.tid;
-  input.value = line.text;
-  i.appendChild(input);
-  label.appendChild(span);
-  label.appendChild(i);
-  p.appendChild(label);
-  history.appendChild(p);
+function updateLine(line) {
+  let p = history.querySelector(`p[tid="${line.tid}"]`);
+  let label, span, i, input;
+  if (p === null) {
+    p = document.createElement('p');
+    p.setAttribute("tid", line.tid);
+    label = document.createElement('label');
+    span = document.createElement('span');
+    i = document.createElement('i');
+    input = document.createElement('input');
+    input.name = line.tid;
+    i.appendChild(input);
+    label.appendChild(span);
+    label.appendChild(i);
+    p.appendChild(label);
+    history.appendChild(p);
 
-  //input.addEventListener('change', updateLine);
-  input.addEventListener('keydown', lineNav);
+    //input.addEventListener('change', updateLine);
+    input.addEventListener('keydown', lineNav);
+
+  } else {
+    label = p.querySelector('label');
+    span = label.querySelector('span');
+    i = label.querySelector('i');
+    input = i.querySelector('input');
+  }
+
+  span.innerText = line.formatElapsedTime(todayMidnight, false);
+  if (p.classList.contains('changed')) {
+    // don't overwrite unsubmitted changes
+    if (input.value == line.text) {
+      p.classList.remove('changed');
+    }
+  } else {
+    input.value = line.text;
+  }
+}
+function sortLines(lines) {
+  lines.forEach(line => {
+    const p = history.querySelector(`p[tid="${line.tid}"]`);
+    history.appendChild(p);
+  });
+}
+function updateLineStatus(tid) {
+  const p = history.querySelector(`p[tid="${tid}"]`);
+  const content = p.querySelector('input').value;
+  const line = transcript.lines[tid];
+  if (content == line.text) {
+    p.classList.remove("changed");
+  } else if (!p.classList.contains("pending")) {
+    p.classList.add("changed");
+  }
 }
 
 function lineNav(e) {
@@ -32,15 +66,14 @@ function lineNav(e) {
   const content = e.target.value;
   const line = transcript.lines[tid];
   const p = e.target.closest('p[tid]');
-
-  if (content === line.text) p.classList.remove("changed");
-  else p.classList.add("changed");
+  setTimeout(updateLineStatus.bind(this, tid), 0);
 
   if (!e.isComposing) {
     if (e.key == "Enter") {
       p.classList.add("pending");
       source.change(tid, content).then(() => {
-        const line = transcript.changeLine(tid, content);
+        const line = transcript.lines[tid];
+        transcript.changeLine(line);
         p.classList.remove("changed", "pending");
       }).catch(() => {
         p.classList.remove("pending");
@@ -60,15 +93,7 @@ function lineNav(e) {
     e.preventDefault();
   }
 }
-/*
-function updateLine(e) {
-  const tid = e.target.name;
-  const content = e.target.value;
-  source.change(tid, content).then(() => {
-    const line = transcript.changeLine(tid, content);
-    console.log(line);
-  })
-}*/
+
 const {calculateShouldScroll, scrollToBottom} = setupStickyScroll(document.body.parentElement);
 
 function displayRecognition(results, final) {
@@ -140,7 +165,7 @@ stt.subscribe("results", results => {
   calculateShouldScroll();
   displayRecognition(out, true);
 
-  displayLine(line);
+  updateLine(line);
   scrollToBottom();
 });
 
@@ -153,10 +178,14 @@ stt.begin();
 source.subscribe("existing", msg => {
   const lines = JSON.parse(msg.lines);
   lines.forEach(line => {
-    line = transcript.addLine(line);
-    displayLine(line);
+    line = transcript.addOrUpdateLine(line);
+    updateLine(line);
   });
   scrollToBottom();
+});
+source.subscribe(["new", "changed"], msg => {
+  const line = transcript.addOrUpdateLine(msg.line);
+  updateLine(line);
 });
 source.subscribe(["pong", "becomesUnhealthy"], () => {
   const ping = isNaN(source.connectionCondition.pingAvg) ? "?" : Math.round(source.connectionCondition.pingAvg);

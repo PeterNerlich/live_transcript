@@ -109,3 +109,15 @@ function stateDebounce(func, wait, immediate, debug) {
 		}
 	}
 }
+
+/****************************/
+
+if (Set.prototype.union === undefined) {
+	Set.prototype.union = function union(setB) {
+		const _union = new Set(this);
+		for (const elem of setB) {
+			_union.add(elem);
+		}
+		return _union;
+	}
+}
