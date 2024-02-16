@@ -1,6 +1,7 @@
 html,
 body {
   min-height: 100vh;
+  margin: 0;
   background-color: #000;
   color: #fff;
   font-family: 'Ubuntu', sans-serif;
@@ -8,10 +9,10 @@ body {
   text-align: center;
 }
 body.error {
-  background: radial-gradient(calc(50vmin + 50vmax) at bottom, #310, #000);
+  background: radial-gradient(calc(50vmin + 50vmax) at top right, #310, #000);
 }
 body.error.refreshing {
-  background: radial-gradient(calc(50vmin + 50vmax) at bottom, #210, #000);
+  background: radial-gradient(calc(50vmin + 50vmax) at top right, #210, #000);
 }
 
 #recognition {
@@ -74,9 +75,14 @@ footer.keys code {
   background-image: url('../img/fast.svg');
 }
 
+#transcript {
+  padding: 1em 0;
+}
+
 #transcript p[tid] {
   position: relative;
   margin: 0;
+  padding: 0 .5em;
   text-align: left;
   font-family: monospace;
   line-height: 1.5;

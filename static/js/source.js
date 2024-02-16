@@ -206,8 +206,10 @@ source.subscribe(["pong", "becomesUnhealthy"], () => {
     else if (ping < 1500) current = "medium";
     else if (ping < 3000) current = "slow";
     else current = "extremely-slow";
+    document.body.classList.remove("error", "refreshing");
   } else {
     current = "disconnected";
+    document.body.classList.add("error");
   }
   connectionQuality.classList.add(current);
   connectionQuality.classList.remove.apply(connectionQuality.classList, classes.filter(c => c !== current));
@@ -216,4 +218,5 @@ source.subscribe(["pong", "becomesUnhealthy"], () => {
 
 connectionQuality.addEventListener("click", e => {
   source.connect();
+  document.body.classList.add("refreshing");
 });
