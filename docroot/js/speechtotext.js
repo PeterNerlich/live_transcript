@@ -102,7 +102,7 @@ class SpeechToText {
 	}
 
 	_handleStart() { this.handleEvent("begin"); }
-	_handleError() { this.handleEvent("error"); }
+	_handleError(e) { this.handleEvent("error", e); }
 	_handleEnd() { this.handleEvent("stop"); }
 	_handleSpeechStart() { this.handleEvent("speechStart"); }
 	_handleSpeechEnd() { this.handleEvent("speechEnd"); }
