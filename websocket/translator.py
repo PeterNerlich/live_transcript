@@ -121,3 +121,7 @@ class DeepLTranslator(Translator):
 			},
 		)
 		return r.json()["translations"][0]["text"].strip()
+
+class DummyTranslator(Translator):
+	async def send_request(self, text: str, source_lang: str, target_lang: str):
+		return text

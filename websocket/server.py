@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 
+import os
 import asyncio
 import datetime
 import websockets
 from websockets.exceptions import ConnectionClosedOK
 
 from transcript import Session, Transcript, Line
-from translator import DeepLTranslator
+from translator import DeepLTranslator, DummyTranslator
 
 SEP = " "
 QUOTE = chr(27) # Escape
+DUMMY = not (os.environ.get("DUMMY", "False").lower() in ('false', 'f', 'no', 'n', '0', ''))
 
 default_session = Session(name="default")
 de = Transcript("de")
@@ -17,7 +19,13 @@ uk = Transcript("uk")
 default_session.add_transcript(de)
 default_session.add_transcript(uk)
 
-translator = DeepLTranslator(de, uk)
+translator = (
+	DummyTranslator(de, uk)
+	if DUMMY else
+	DeepLTranslator(de, uk)
+)
+if isinstance(translator, DummyTranslator):
+	print(f"Using DummyTranslator! ({repr(os.environ.get('DUMMY'))})")
 
 clients = set()
 connected = set()
