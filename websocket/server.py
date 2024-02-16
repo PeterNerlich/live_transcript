@@ -289,7 +289,7 @@ def parse_command(verbs, websocket=None):
 
 	if verbs[0] == "change":
 		# change <counter> line <tid> to <content>
-		if len(verbs) < 4:
+		if len(verbs) < 6:
 			raise TooFewArgumentsException(websocket, verbs)
 		if verbs[2] != "line":
 			raise UnexpectedKeywordException(websocket, "line", verbs[2], verbs)
@@ -304,7 +304,7 @@ def parse_command(verbs, websocket=None):
 
 	if verbs[0] == "split":
 		# split <counter> line <tid> at <position>
-		if len(verbs) < 4:
+		if len(verbs) < 6:
 			raise TooFewArgumentsException(websocket, verbs)
 		if verbs[2] != "line":
 			raise UnexpectedKeywordException(websocket, "line", verbs[2], verbs)
@@ -319,7 +319,7 @@ def parse_command(verbs, websocket=None):
 
 	if verbs[0] == "merge":
 		# merge <counter> lines <tid_one> and <tid_two>
-		if len(verbs) < 4:
+		if len(verbs) < 6:
 			raise TooFewArgumentsException(websocket, verbs)
 		if verbs[2] != "lines":
 			raise UnexpectedKeywordException(websocket, "lines", verbs[2], verbs)
