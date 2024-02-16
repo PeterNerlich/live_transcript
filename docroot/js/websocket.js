@@ -343,7 +343,13 @@ class WebsocketClient {
 	args(list) {
 		const SEP = this.SEP;
 		const QUOTE = this.QUOTE;
-		return list.map(a => `${a}`.includes(SEP) ? `${QUOTE}${a}${QUOTE}` : `${a}`).join(SEP);
+		return list.map(arg => {
+			arg = `${arg}`;
+			if (!arg.trim() || arg.includes(SEP))
+				return `${QUOTE}${arg}${QUOTE}`;
+			else
+				return arg;
+		}).join(SEP);
 	}
 
 	subscribe(events, listener) {

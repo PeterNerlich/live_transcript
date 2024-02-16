@@ -358,7 +358,7 @@ def parse(msg):
 	return verbs
 
 def args(l):
-	return SEP.join(map(lambda a: f"{QUOTE}{a}{QUOTE}" if SEP in a else f"{a}", l))
+	return SEP.join(map(lambda a: f"{QUOTE}{a}{QUOTE}" if not f"{a}".strip() or SEP in f"{a}" else f"{a}", l))
 
 
 
