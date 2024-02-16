@@ -83,6 +83,14 @@ body.error.refreshing {
   background: linear-gradient(90deg, transparent, black 110%);
 }
 
+#recognition {
+  color: #ddf;
+}
+#recognition.final {
+  color: #080;
+  font-style: italic;
+}
+
 #connection-quality {
   position: fixed;
   top: 1em;
