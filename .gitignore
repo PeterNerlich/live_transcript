@@ -5,4 +5,6 @@
 
 !requirements.txt
 
+docroot
+
 **/__pycache__
