@@ -2,6 +2,7 @@
 import os
 import requests
 import asyncio
+from async_lru import alru_cache
 
 from transcript import Line
 
@@ -39,7 +40,7 @@ class Translator:
 			target = Line(**line)
 
 		try:
-			translation = await self.send_request(line.text,
+			translation = await self.cached_send_request(line.text,
 				self.source_transcript.language,
 				self.target_transcript.language)
 			target.text = translation
@@ -68,7 +69,11 @@ class Translator:
 		task = asyncio.create_task(self.translate(line))
 		self._background_tasks.add(task)
 
-	async def send_request(self, text: str):
+	@alru_cache(maxsize=512)
+	async def cached_send_request(self, text: str, source_lang: str, target_lang: str):
+		return await self.send_request(text, source_lang, target_lang)
+
+	async def send_request(self, text: str, source_lang: str, target_lang: str):
 		raise NotImplementedError()
 
 	def subscribe(self, events, listener: callable):
@@ -124,4 +129,5 @@ class DeepLTranslator(Translator):
 
 class DummyTranslator(Translator):
 	async def send_request(self, text: str, source_lang: str, target_lang: str):
+		print(f"  DummyTranslator.send_request({repr(text)}, {repr(source_lang)}, {repr(target_lang)})")
 		return text

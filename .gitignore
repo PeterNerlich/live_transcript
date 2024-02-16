@@ -3,4 +3,6 @@
 *.vtt
 *.txt
 
+!requirements.txt
+
 **/__pycache__
