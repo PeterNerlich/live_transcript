@@ -18,7 +18,7 @@ function updateLine(line) {
     const original = p.getAttribute("original") || p.innerText;
     p.innerHTML = new Diff(original, line.text).html();
     p.setAttribute("tid", line.tid);
-    p.classList.add("changed")
+    p.classList.add("changed");
   }
   return p;
 }

@@ -145,7 +145,6 @@ stt.subscribe("intermediates", intermediates => {
   scrollToBottom();
 });
 
-
 stt.subscribe("results", results => {
   let end = new Date();
   const out = [];
