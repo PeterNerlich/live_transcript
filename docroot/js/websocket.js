@@ -419,7 +419,7 @@ class WebsocketReader extends WebsocketClient {
 	}
 
 	enterChannel() {
-		super.enterChannel()
+		super.enterChannel();
 		return this.expect("existing").then(transcript => {
 			this.handleEvent("existing", transcript);
 		});
@@ -432,7 +432,7 @@ class WebsocketSource extends WebsocketClient {
 	}
 
 	enterChannel() {
-		super.enterChannel()
+		super.enterChannel();
 		return this.expect("Authentication")
 			.then(() => {
 				this.socket.send(this.args(["auth", 0]));
@@ -451,7 +451,7 @@ class WebsocketEditor extends WebsocketClient {
 	}
 
 	enterChannel() {
-		super.enterChannel()
+		super.enterChannel();
 		return this.expect("Authentication")
 			.then(() => {
 				this.socket.send(this.args(["auth", 0]));
