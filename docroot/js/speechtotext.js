@@ -42,6 +42,12 @@ class SpeechToText {
 		this.intentRunning = false;
 		this.browserAPI.abort();
 	}
+	restart() {
+		this.intentRunning = true;
+		// tell api to stop listening and produce a final result
+		this.browserAPI.stop();
+		this.browserAPI.start();
+	}
 
 	subscribe(events, listener) {
 		if (typeof events === "string") events = [events];

@@ -169,6 +169,12 @@ stt.subscribe("results", results => {
   scrollToBottom();
 });
 
+document.addEventListener("keydown", e => {
+  if (e.composed && e.ctrlKey && (e.key === "Enter" || e.key === "Space")) {
+    stt.restart();
+  }
+});
+
 logAll(stt, "stt");
 logAll(source, "source", ["pong"]);
 
