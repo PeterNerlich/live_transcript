@@ -121,3 +121,13 @@ if (Set.prototype.union === undefined) {
 		return _union;
 	}
 }
+
+if (Array.prototype.toSorted === undefined) {
+	Array.prototype.toSorted = function toSorted(comparefn) {
+		if (typeof comparefn !== 'undefined' && !IsCallable(comparefn))
+			throw new $TypeError('`comparefn` must be a function');
+		var a = Array.from(this);
+		a.sort(comparefn);
+		return a;
+	}
+}
