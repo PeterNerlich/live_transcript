@@ -159,14 +159,17 @@ stt.subscribe("results", results => {
     }
     out.push(best);
   }
-  const line = new Line({tid: new UUIDv4(), start: start, end: end, text: out.map(x=>x.transcript).join('').trim()});
-  source.submit(line.toJSON());
-  start = end;
-  transcript.addLine(line);
   calculateShouldScroll();
   displayRecognition(out, true);
 
-  updateLine(line);
+  const text = out.map(x=>x.transcript).join('').trim();
+  if (text) {
+    const line = new Line({tid: new UUIDv4(), start: start, end: end, text: text});
+    source.submit(line.toJSON());
+    start = end;
+    transcript.addLine(line);
+    updateLine(line);
+  }
   scrollToBottom();
 });
 
