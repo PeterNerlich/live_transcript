@@ -54,7 +54,7 @@ class Transcript:
 
 	def change_line(self, tid: str, content: str):
 		line = self.lines[tid]
-		if line and line.text != content:
+		if line:
 			line.text = content
 			self.handle_event("changed", line)
 		return line
