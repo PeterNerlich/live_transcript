@@ -6,6 +6,8 @@ from functools import lru_cache
 import re
 import datetime
 
+DEBUG = not (os.environ.get("DEBUG", "False").lower() in ('false', 'f', 'no', 'n', '0', ''))
+
 script_dir = os.path.dirname(os.path.realpath(__file__))
 static_dir = Path(script_dir, "static")
 template_dir = Path(script_dir, "templates")
@@ -14,32 +16,46 @@ render_dir = Path(script_dir, "docroot")
 pattern = re.compile(r'(src|href)="([^"]*)"')
 
 
-def render_url(match):
-	attr = match.group(1)
-	url = match.group(2)
-	# split off anchor and query part
-	anchor_pos = url.index("#") if "#" in url else len(url)
-	query_pos = url.index("?") if "?" in url else anchor_pos
-	path = url[:query_pos]
-	query = url[query_pos:anchor_pos]
-	anchor = url[anchor_pos:]
-	# no need replacing empty urls or those leading to external services
-	if not url.strip() or url.startswith("http"):
-		print(f"not replacing external or empty url:  {url}")
-		return match.group(0)
-	# add timestamp to urls
-	if path.endswith((".html", ".css", ".js")):
-		timestamp = get_timestamp(path)
-		if query:
-			query = f"{query}&v={timestamp}"
+def make_render_url_fn(log_replaced=None, log_kept=None, debug=False):
+	if log_replaced is None:
+		log_replaced = []
+	if log_kept is None:
+		log_kept = []
+
+	def render_url(match):
+		attr = match.group(1)
+		url = match.group(2)
+		# split off anchor and query part
+		anchor_pos = url.index("#") if "#" in url else len(url)
+		query_pos = url.index("?") if "?" in url else anchor_pos
+		path = url[:query_pos]
+		query = url[query_pos:anchor_pos]
+		anchor = url[anchor_pos:]
+		# no need replacing empty urls or those leading to external services
+		if not url.strip() or url.startswith("http"):
+			log_kept.append(url)
+			if debug:
+				print(f"not replacing external or empty url:  {url}")
+			return match.group(0)
+		# add timestamp to urls
+		if path.endswith((".html", ".css", ".js")):
+			timestamp = get_timestamp(path)
+			if query:
+				query = f"{query}&v={timestamp}"
+			else:
+				query = f"?v={timestamp}"
+		newurl = f"{path}{query}{anchor}"
+		if url != newurl:
+			log_replaced.append((url, newurl))
+			if debug:
+				print(f"replacing url: \t{url}\t→\t{newurl}")
 		else:
-			query = f"?v={timestamp}"
-	newurl = f"{path}{query}{anchor}"
-	if url != newurl:
-		print(f"replacing url: \t{url}\t→\t{newurl}")
-	else:
-		print(f"not replacing url: \t{url}")
-	return f'{attr}="{newurl}"'
+			log_kept.append(url)
+			if debug:
+				print(f"not replacing url: \t{url}")
+		return f'{attr}="{newurl}"'
+
+	return render_url
 
 @lru_cache(maxsize=1024)
 def get_timestamp(url):
@@ -48,7 +64,7 @@ def get_timestamp(url):
 		timestamp = os.path.getmtime(file)
 		return datetime.datetime.fromtimestamp(timestamp).isoformat()
 
-def compose_docroot(render_dir, template_dir, static_dir=None):
+def compose_docroot(render_dir, template_dir, static_dir=None, debug=False):
 	render_dir = Path(render_dir)
 	if render_dir.exists():
 		if not render_dir.is_dir():
@@ -69,16 +85,48 @@ def compose_docroot(render_dir, template_dir, static_dir=None):
 				#destination.symlink_to(static)
 				destination.hardlink_to(static)
 
+	all_replaced = []
+	all_kept = []
 	for template in Path(template_dir).rglob("*"):
+		replaced = []
+		kept = []
 		# read file
 		filename = os.path.relpath(template, template_dir)
 		destination = Path(render_dir, filename)
-		print(f"{template} → {destination}")
 		# extract URIs
-		rendered = pattern.sub(render_url, template.read_text())
+		rendered = pattern.sub(make_render_url_fn(replaced, kept, debug=debug), template.read_text())
 		# write to dest
 		with open(destination, "w") as file:
 			file.write(rendered)
+
+		if not debug:
+			print(f"rendered {filename}, replaced {len(replaced)} and kept {len(kept)} links (replaced {len(set(replaced))} and kept {len(set(kept))} unique links)")
+		else:
+			print(f"rendered {template} → {destination}\nreplaced {len(replaced)} and kept {len(kept)} links (replaced {len(set(replaced))} and kept {len(set(kept))} unique links)")
+			nl = "\n\t"
+			lines = map(lambda x: f"{x[1]} ×\t{repr(x[0])}", aggregate(replaced).items())
+			print(f"  replaced:{nl}{nl.join(lines)}")
+			lines = map(lambda x: f"{x[1]} ×\t{repr(x[0])}", aggregate(kept).items())
+			print(f"  kept:{nl}{nl.join(lines)}")
+		all_replaced.extend(replaced)
+		all_kept.extend(kept)
+
+	print(f"\nReplaced {len(all_replaced)} and kept {len(kept)} links in total (replaced {len(set(replaced))} and kept {len(set(kept))} unique links)")
+	if debug:
+		nl = "\n\t"
+		lines = map(lambda x: f"{x[1]} ×\t{repr(x[0])}", aggregate(all_replaced).items())
+		print(f"  replaced:{nl}{nl.join(lines)}")
+		lines = map(lambda x: f"{x[1]} ×\t{repr(x[0])}", aggregate(all_kept).items())
+		print(f"  kept:{nl}{nl.join(lines)}")
+
+def aggregate(items):
+	d = dict()
+	for item in items:
+		if item not in d:
+			d[item] = 1
+		else:
+			d[item] += 1
+	return d
 
 def ensure_dir(path):
 	if path.exists():
@@ -97,4 +145,4 @@ def ensure_removal(path):
 
 
 if __name__ == '__main__':
-	compose_docroot(render_dir=render_dir, template_dir=template_dir, static_dir=static_dir)
+	compose_docroot(render_dir=render_dir, template_dir=template_dir, static_dir=static_dir, debug=DEBUG)
