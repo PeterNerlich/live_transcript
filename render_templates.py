@@ -5,6 +5,7 @@ from pathlib import Path
 from functools import lru_cache
 import re
 import datetime
+import subprocess
 
 DEBUG = not (os.environ.get("DEBUG", "False").lower() in ('false', 'f', 'no', 'n', '0', ''))
 
@@ -38,7 +39,7 @@ def make_render_url_fn(log_replaced=None, log_kept=None, debug=False):
 				print(f"not replacing external or empty url:  {url}")
 			return match.group(0)
 		# add timestamp to urls
-		if path.endswith((".html", ".css", ".js")):
+		if path.endswith((".html", ".css", ".js", ".json")):
 			timestamp = get_timestamp(path)
 			if query:
 				query = f"{query}&v={timestamp}"
@@ -143,6 +144,16 @@ def ensure_removal(path):
 		else:
 			path.rmdir()
 
-
 if __name__ == '__main__':
 	compose_docroot(render_dir=render_dir, template_dir=template_dir, static_dir=static_dir, debug=DEBUG)
+
+	git = Path(script_dir, ".git")
+	version_global = Path(script_dir, "version.json")
+	version_target = Path(render_dir, "version.json")
+	if git.exists() and git.is_dir():
+		subprocess.call([Path(script_dir, "save_version_json.sh")], cwd=render_dir)
+	elif version_global.exists() and version_global.is_file():
+		version_global.copy(version_target)
+		print("No .git directory, copied global version.json")
+	else:
+		print("Unable to generate version file! No .git directory and no global version.json")

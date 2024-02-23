@@ -40,6 +40,16 @@ footer.keys code {
   background: #333;
 }
 
+#version {
+  position: fixed;
+  top: .1em;
+  left: .5em;
+  background: rgba(0,0,0, .5);
+  font-size: .8em;
+  color: #aaa;
+  z-index: 100;
+}
+
 #connection-quality {
   position: fixed;
   top: 1em;

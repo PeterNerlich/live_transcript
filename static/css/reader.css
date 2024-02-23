@@ -87,6 +87,16 @@ body.error.refreshing {
   background: linear-gradient(90deg, transparent 20%, black 160%);
 }
 
+#version {
+  position: fixed;
+  top: .1em;
+  left: .5em;
+  background: rgba(0,0,0, .5);
+  font-size: .8em;
+  color: #aaa;
+  z-index: 100;
+}
+
 #connection-quality {
   position: fixed;
   top: 1em;

@@ -223,3 +223,5 @@ connectionQuality.addEventListener("click", e => {
   source.connect();
   document.body.classList.add("refreshing");
 });
+
+displayClientVersion();

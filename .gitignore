@@ -2,6 +2,7 @@
 *.srt
 *.vtt
 *.txt
+version.json
 
 !requirements.txt
 

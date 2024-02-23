@@ -151,3 +151,5 @@ connectionQuality.addEventListener("click", e => {
   editor.connect();
   document.body.classList.add("refreshing");
 });
+
+displayClientVersion();

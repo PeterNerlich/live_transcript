@@ -25,6 +25,31 @@ function logAll(obj, name, except) {
 /**************************************/
 
 
+function displayClientVersion() {
+	const versionDiv = document.getElementById("version");
+	const clientVersionDiv = versionDiv ? versionDiv.querySelector("#client") : null;
+	const fallback = "version.json";
+	const url = clientVersionDiv ? clientVersionDiv.getAttribute("data-src") || fallback : fallback;
+	return fetch(url).then(response => {
+		if (!response.ok) {
+			throw new Error("HTTP error " + response.status);
+		}
+		return response.json();
+	}).then(json => {
+		if (clientVersionDiv) {
+			clientVersionDiv.innerText = `Version: ${json.releaseTag}`;
+		}
+	}).catch(e => {
+		if (clientVersionDiv) {
+			clientVersionDiv.innerText = "Version: Unknown";
+		}
+	});
+}
+
+
+/**************************************/
+
+
 function setupStickyScroll(elem, debug) {
 	let shouldScroll;
 	const target = (elem === document.body.parentElement) ? window : elem;

@@ -97,3 +97,5 @@ connectionQuality.addEventListener("click", e => {
   reader.connect();
   document.body.classList.add("refreshing");
 });
+
+displayClientVersion();
