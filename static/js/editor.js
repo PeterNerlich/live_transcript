@@ -153,3 +153,4 @@ connectionQuality.addEventListener("click", e => {
 });
 
 displayClientVersion();
+editor.subscribe("version", displayServerVersion);

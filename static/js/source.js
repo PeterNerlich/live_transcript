@@ -225,3 +225,4 @@ connectionQuality.addEventListener("click", e => {
 });
 
 displayClientVersion();
+source.subscribe("version", displayServerVersion);

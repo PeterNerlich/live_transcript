@@ -46,6 +46,14 @@ function displayClientVersion() {
 	});
 }
 
+function displayServerVersion(version) {
+	const versionDiv = document.getElementById("version");
+	const serverVersionDiv = versionDiv ? versionDiv.querySelector("#server") : null;
+	if (serverVersionDiv) {
+		serverVersionDiv.innerText = `| Server: ${version}`;
+	}
+}
+
 
 /**************************************/
 

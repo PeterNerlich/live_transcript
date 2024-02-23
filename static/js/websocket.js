@@ -26,6 +26,7 @@ class WebsocketClient {
 			merged: [],
 			existing: [],
 			pong: [],
+			version: [],
 			becomesHealthy: [],
 			becomesUnhealthy: [],
 			_closed: [],
@@ -83,6 +84,8 @@ class WebsocketClient {
 			this.pong(verbs.slice(1).join(this.SEP));
 		} else if (verbs[0] === "confirm") {
 			this.confirm(verbs[1], verbs.slice(2));
+		} else if (verbs[0] === "version") {
+			this.version(verbs[1]);
 		} else if (this.expecting) {
 			this.expecting(verbs);
 		} else {
@@ -313,6 +316,10 @@ class WebsocketClient {
 			console.warn(` ${counter} Pong for unknown ping!`);
 		}
 		this.handleEvent("pong");
+	}
+
+	version(version) {
+		this.handleEvent("version", version);
 	}
 
 	parse(msg) {

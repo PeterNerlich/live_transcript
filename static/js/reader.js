@@ -99,3 +99,4 @@ connectionQuality.addEventListener("click", e => {
 });
 
 displayClientVersion();
+reader.subscribe("version", displayServerVersion);

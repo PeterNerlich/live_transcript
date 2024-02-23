@@ -8,6 +8,7 @@ from websockets.exceptions import ConnectionClosedOK
 
 from transcript import Session, Transcript, Line
 from translator import DeepLTranslator, DummyTranslator
+from util import version
 
 SEP = " "
 QUOTE = chr(27) # Escape
@@ -119,6 +120,7 @@ class NonexistantChannelException(TCException):
 async def handler(websocket):
 	print(f"new connection")
 	try:
+		await websocket.send(args(["version", version.get("releaseTag", "Unknown")]))
 		cmd = await expect("join", websocket)
 		print(f"cmd: {cmd}")
 		_, role, session, language = cmd["channel"].split("/")
@@ -223,7 +225,7 @@ def parse_command(verbs, websocket=None):
 		}
 
 	if verbs[0] == "join":
-		# join <counter> <channel> id <id or None>
+		# join <counter> <channel> id <id or None> [<client version>]
 		if len(verbs) < 5:
 			raise TooFewArgumentsException(websocket, verbs)
 		if verbs[3] != "id":
@@ -233,6 +235,7 @@ def parse_command(verbs, websocket=None):
 			"counter": verbs[1],
 			"channel": verbs[2],
 			"id": None if verbs[4] == "None" else verbs[4],
+			"client_version": None if len(verbs) < 6 or verbs[5].lower() in ("none", "unknown") else verbs[5],
 		}
 
 	if verbs[0] == "leave":
