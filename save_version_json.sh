@@ -1,7 +1,7 @@
 #!/bin/sh
 
 FIRSTTAG=$(git describe --tags --always --dirty='-*' 2>/dev/null)
-RELEASETAG=$(git describe --tags --long --always --dirty='-*' --match 'v[0-9.]+' 2>/dev/null)
+RELEASETAG=$(git describe --tags --long --always --dirty='-*' --match 'v[0-9.][0-9.][0-9.]*' 2>/dev/null)
 
 git --no-pager log \
   -1 --date=short --decorate=short \
