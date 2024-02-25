@@ -15,18 +15,25 @@ QUOTE = chr(27) # Escape
 DUMMY = not (os.environ.get("DUMMY", "False").lower() in ('false', 'f', 'no', 'n', '0', ''))
 
 default_session = Session(name="default")
-de = Transcript("de")
-uk = Transcript("uk")
-default_session.add_transcript(de)
-default_session.add_transcript(uk)
+languages = ["de", "uk", "en", "ro"]
+transcripts = {}
+for language in languages:
+	transcripts[language] = Transcript(language)
+	default_session.add_transcript(transcripts[language])
 
-translator = (
-	DummyTranslator(de, uk)
+Translator = (
+	DummyTranslator
 	if DUMMY else
-	DeepLTranslator(de, uk)
+	DeepLTranslator
 )
-if isinstance(translator, DummyTranslator):
+if Translator is DummyTranslator:
 	print(f"Using DummyTranslator! ({repr(os.environ.get('DUMMY'))})")
+
+translators = {
+	"uk": Translator(transcripts["de"], transcripts["uk"], paused=True),
+	"en": Translator(transcripts["de"], transcripts["en"], paused=True),
+	"ro": Translator(transcripts["de"], transcripts["ro"], paused=True),
+}
 
 clients = set()
 connected = set()
@@ -66,7 +73,7 @@ def broadcast_update(message_fn: callable, role=None, session=None, language=Non
 		websockets.broadcast(target, message_fn(data))
 	return helper
 
-for transcript in [de, uk]:
+for transcript in transcripts.values():
 	transcript.subscribe("new", broadcast_update(
 		lambda d: args(["new", "line", str(d)]),
 		["reader", "editor"], default_session, transcript.language))
@@ -138,6 +145,9 @@ async def handler(websocket):
 			channels[role][session] = dict()
 		if language not in channels[role][session]:
 			channels[role][session][language] = set()
+		if len(channels[role][session][language]) == 0 and language in translators:
+			translators[language].unpause()
+			print(f"unpausing translator for {language} of {session}")
 		channels[role][session][language].add(websocket)
 		await websocket.send(args(["confirm", cmd["counter"], cmd["channel"]]))
 
@@ -160,7 +170,6 @@ async def handler(websocket):
 			print(f"cmd: {cmd}")
 			if cmd["cmd"] == "leave":
 				if cmd["channel"] == f"/{channel}":
-					channels[role][session][language].remove(websocket)
 					await websocket.send(args(["Bye!"]))
 					break
 			elif cmd["cmd"] == "submit":
@@ -191,6 +200,11 @@ async def handler(websocket):
 	except ConnectionClosedOK:
 		print(f"disconnected unexpectedly {websocket}")
 	finally:
+		if role and session and language:
+			channels[role][session][language].remove(websocket)
+			if len(channels[role][session][language]) == 0 and language in translators:
+				translators[language].pause()
+				print(f"pausing translator for {language} of {session}")
 		if websocket in connected:
 			connected.remove(websocket)
 		print(f"stopped {websocket}")
@@ -369,8 +383,10 @@ async def main():
 	async with websockets.serve(handler, "0.0.0.0", 8765):
 		print("server started")
 		while True:
-			await translator.check_on_background_tasks()
-			await asyncio.sleep(.01)
+			await asyncio.gather(
+				*map(lambda x: x.check_on_background_tasks(), translators.values()),
+				asyncio.sleep(.01)
+			)
 		#await asyncio.Future()
 
 if __name__ == "__main__":

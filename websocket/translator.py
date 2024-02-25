@@ -18,18 +18,20 @@ def to_async(func):
 
 
 class Translator:
-	def __init__(self, source_transcript, target_transcript):
+	def __init__(self, source_transcript, target_transcript, paused=False):
 		self.source_transcript = source_transcript
 		self.target_transcript = target_transcript
+		self.queued = []
 		self.waiting = []
 		#source_transcript.subscribe(['new', 'changed'], self.translate)
-		source_transcript.subscribe(['new', 'changed'], self.translate_in_background)
+		source_transcript.subscribe(['new', 'changed'], self.queue_translation)
 		self.event_listeners = {
 			"translation_requested": [],
 			"translated": [],
 			"error": [],
 		}
 		self._background_tasks = set()
+		self._paused = paused
 
 	async def translate(self, line):
 		if (line.tid in self.target_transcript.lines):
@@ -38,7 +40,7 @@ class Translator:
 			target = Line.from_json(str(line))
 		else:
 			target = Line(**line)
-		assert(target is not line, f"[Translator] line is the same object as target line! {line}, {target}")
+		assert target is not line, f"[Translator] line is the same object as target line! {line}, {target}"
 
 		try:
 			translation = await self.cached_send_request(line.text,
@@ -69,6 +71,35 @@ class Translator:
 	def translate_in_background(self, line):
 		task = asyncio.create_task(self.translate(line))
 		self._background_tasks.add(task)
+
+	def queue_translation(self, line):
+		if self.paused:
+			tids = list(map(lambda x: x.tid, self.queued))
+			if line.tid in tids:
+				self.queued[tids.index(line.tid)] = line
+			else:
+				self.queued.append(line)
+		else:
+			self.translate_in_background(line)
+
+	@property
+	def paused(self):
+		return self._paused
+	@paused.setter
+	def paused(self, val):
+		val = bool(val)
+		old_val = self._paused
+		self._paused = val
+		if not val and old_val:
+			print(f"### queue got unpaused, translating {len(self.queued)} lines")
+			while self.queued:
+				line = self.queued[0]
+				self.queued = self.queued[1:]
+				self.translate_in_background(line)
+	def pause(self):
+		self.paused = True
+	def unpause(self):
+		self.paused = False
 
 	@alru_cache(maxsize=512)
 	async def cached_send_request(self, text: str, source_lang: str, target_lang: str):
@@ -110,8 +141,8 @@ class Translator:
 
 
 class DeepLTranslator(Translator):
-	def __init__(self, source_transcript, target_transcript, auth_key: str = None):
-		super().__init__(source_transcript, target_transcript)
+	def __init__(self, source_transcript, target_transcript, auth_key: str = None, paused=False):
+		super().__init__(source_transcript, target_transcript, paused)
 		if auth_key is None:
 			auth_key = os.environ.get("DEEPL_AUTH_KEY")
 		self._auth_key = auth_key
@@ -134,4 +165,5 @@ class DeepLTranslator(Translator):
 class DummyTranslator(Translator):
 	async def send_request(self, text: str, source_lang: str, target_lang: str):
 		print(f"  DummyTranslator.send_request({repr(text)}, {repr(source_lang)}, {repr(target_lang)})")
+		#await asyncio.sleep(.2)
 		return text
