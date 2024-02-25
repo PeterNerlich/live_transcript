@@ -1,6 +1,9 @@
 
 const socketURL = `${location.protocol.replace('http','ws')}//${location.search.substr(1).split("&").includes('debug') ? location.hostname+':8765' : location.host+'/socket'}`;
 
+const queryArgs = parseQueryArgs(location.search);
+const lang = queryArgs.lang || "de";
+
 const connectionQuality = document.getElementById("connection-quality");
 const history = document.getElementById("transcript");
 const recognition = document.getElementById("recognition");
@@ -122,10 +125,9 @@ function displayRecognition(results, final) {
   }
 }
 
-const stt = new SpeechToText();
-const source = new WebsocketEditor(socketURL, "default", "de");
-//const source = new WebsocketSource(`${location.protocol.replace('http','ws')}//${location.host}/socket`, "default", "de");
-const transcript = new Transcript(null, "de");
+const stt = new SpeechToText(lang);
+const source = new WebsocketEditor(socketURL, "default", lang);
+const transcript = new Transcript(null, lang);
 
 //let start = session.start || new Date();
 let start = new Date();

@@ -1,6 +1,9 @@
 
 const socketURL = `${location.protocol.replace('http','ws')}//${location.search.substr(1).split("&").includes('debug') ? location.hostname+':8765' : location.host+'/socket'}`;
 
+const queryArgs = parseQueryArgs(location.search);
+const lang = queryArgs.lang || "de";
+
 const connectionQuality = document.getElementById("connection-quality");
 const history = document.getElementById("transcript");
 const todayMidnight = new Date();
@@ -97,8 +100,8 @@ function lineNav(e) {
 
 const {calculateShouldScroll, scrollToBottom} = setupStickyScroll(document.body.parentElement);
 
-const editor = new WebsocketEditor(socketURL, "default", "de");
-const transcript = new Transcript(null, "de");
+const editor = new WebsocketEditor(socketURL, "default", lang);
+const transcript = new Transcript(null, lang);
 
 //let start = session.start || new Date();
 let start = new Date();

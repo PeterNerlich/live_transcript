@@ -1,6 +1,9 @@
 
 const socketURL = `${location.protocol.replace('http','ws')}//${location.search.substr(1).split("&").includes('debug') ? location.hostname+':8765' : location.host+'/socket'}`;
 
+const queryArgs = parseQueryArgs(location.search);
+const lang = queryArgs.lang || "uk";
+
 const html = document.body.parentElement;
 const connectionQuality = document.getElementById("connection-quality");
 const history = document.getElementById("history");
@@ -42,8 +45,8 @@ function sortLines(lines) {
 }
 const {calculateShouldScroll, scrollToBottom} = setupStickyScroll(document.body.parentElement);
 
-const reader = new WebsocketReader(socketURL, "default", "uk");
-const transcript = new Transcript(null, "uk");
+const reader = new WebsocketReader(socketURL, "default", lang);
+const transcript = new Transcript(null, lang);
 
 logAll(reader, "reader", ["pong"]);
 

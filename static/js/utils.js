@@ -58,6 +58,21 @@ function displayServerVersion(version) {
 /**************************************/
 
 
+function parseQueryArgs(query) {
+	const fields = query.slice(1).split("&");
+	let out = {}
+	for (const arg of fields) {
+		const key = arg.split("=")[0];
+		const value = arg.slice(key.length+1);
+		out[key] = value;
+	}
+	return out;
+}
+
+
+/**************************************/
+
+
 function setupStickyScroll(elem, debug) {
 	let shouldScroll;
 	const target = (elem === document.body.parentElement) ? window : elem;
