@@ -89,8 +89,9 @@ body.error.refreshing {
 
 #version {
   position: fixed;
-  top: .1em;
-  left: .5em;
+  top: 0;
+  left: 0;
+  padding: 0 .5em;
   background: rgba(0,0,0, .5);
   font-size: .8em;
   color: #aaa;
@@ -102,15 +103,17 @@ body.error.refreshing {
   top: 1em;
   right: 1em;
   min-width: 3em;
-  min-height: 4em;
+  min-height: 3.5em;
   background: rgba(0,0,0, .5);
   font-family: monospace;
+}
+#connection-quality span {
   font-size: .8em;
 }
 #connection-quality i {
   display: block;
-  min-width: 4em;
-  min-height: 4em;
+  min-width: 3.5em;
+  min-height: 3.5em;
   background-repeat: no-repeat;
   background-size: contain;
   background-position: center;
@@ -129,4 +132,48 @@ body.error.refreshing {
 }
 #connection-quality.fast i {
   background-image: url('../img/fast.svg');
+}
+
+#language {
+  position: fixed;
+  top: 5.5em;
+  right: 1em;
+  padding: .5em;
+}
+#language i {
+  font-style: normal;
+  font-weight: bold;
+  cursor: default;
+}
+#language > i::after {
+  content: " ▼";
+}
+#language:hover > i::after, #language:focus > i::after, #language:active > i::after {
+  content: " ▲";
+}
+#language, #language .popup {
+  background: rgba(0,0,0, .5);
+}
+#language .popup {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  padding: .5em 0;
+  display: none;
+}
+#language .popup ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+#language .popup li {
+  padding: .5em 1em;
+  cursor: pointer;
+}
+#language:hover > .popup, #language:focus > i.popup, #language:active > i.popup {
+  display: initial;
+}
+#language .popup li:hover, #language .popup li:focus, #language .popup li:active {
+  text-decoration: underline;
+  background: rgba(127,127,127, .5);
 }

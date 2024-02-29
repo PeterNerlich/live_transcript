@@ -1,8 +1,9 @@
 
-const socketURL = `${location.protocol.replace('http','ws')}//${location.search.substr(1).split("&").includes('debug') ? location.hostname+':8765' : location.host+'/socket'}`;
+const queryArgs = new URLSearchParams(window.location.search);
+const socketURL = `${location.protocol.replace('http','ws')}//${queryArgs.get('debug') === null ? location.host+'/socket' : location.hostname+':8765'}`;
 
-const queryArgs = parseQueryArgs(location.search);
-const lang = queryArgs.lang || "uk";
+const availableLanguages = ["uk", "en", "ro", "de"];
+const lang = queryArgs.get("lang") || "uk";
 
 const html = document.body.parentElement;
 const connectionQuality = document.getElementById("connection-quality");
@@ -103,3 +104,25 @@ connectionQuality.addEventListener("click", e => {
 
 displayClientVersion();
 reader.subscribe("version", displayServerVersion);
+
+
+const languageDiv = document.getElementById("language");
+const iCurrentLanguage = languageDiv.querySelector('i');
+const ulLangs = languageDiv.querySelector('ul');
+
+iCurrentLanguage.innerText = lang.toUpperCase();
+
+availableLanguages.forEach(l => {
+  if (l == lang) return;
+
+  const li = document.createElement("li");
+  const i = document.createElement("i");
+  i.innerText = l.toUpperCase();
+  li.appendChild(i);
+  ulLangs.appendChild(li);
+
+  li.addEventListener("click", () => {
+    queryArgs.set("lang", l);
+    location.search = `?${queryArgs.toString()}`;
+  });
+});

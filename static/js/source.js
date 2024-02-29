@@ -1,8 +1,9 @@
 
-const socketURL = `${location.protocol.replace('http','ws')}//${location.search.substr(1).split("&").includes('debug') ? location.hostname+':8765' : location.host+'/socket'}`;
+const queryArgs = new URLSearchParams(window.location.search);
+const socketURL = `${location.protocol.replace('http','ws')}//${queryArgs.get('debug') === null ? location.host+'/socket' : location.hostname+':8765'}`;
 
-const queryArgs = parseQueryArgs(location.search);
-const lang = queryArgs.lang || "de";
+const availableLanguages = ["uk", "en", "ro", "de"];
+const lang = queryArgs.get("lang") || "de";
 
 const connectionQuality = document.getElementById("connection-quality");
 const history = document.getElementById("transcript");
