@@ -190,7 +190,7 @@ class Line {
 			this.end = new Date(end);
 			this.text = text || "";
 			this.tid = tid || new UUIDv4();
-			this.uuid = uuid || new UUIDv4();
+			this.uuid = new UUIDv4();
 			this.previouslyAssociatedTids = new Set(previouslyAssociatedTids);
 		} else {
 			if (typeof json === "string") json = JSON.parse(json);
@@ -198,7 +198,7 @@ class Line {
 			this.end = new Date(json.end);
 			this.text = json.text;
 			this.tid = json.tid;
-			this.uuid = json.uuid;
+			this.uuid = json.uuid || new UUIDv4();
 			this.previouslyAssociatedTids = new Set(json.previously_associated_tids);
 		}
 	}
@@ -228,11 +228,12 @@ class Line {
 
 	duplicate() {
 		return new Line(
+			null,
 			this.start,
 			this.end,
 			this.text,
 			null,
-			this.previouslyAssociatedTids.union([this.tid]),
+			this.previouslyAssociatedTids.union(new Set([this.tid])),
 		);
 	}
 
