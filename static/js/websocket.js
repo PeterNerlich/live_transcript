@@ -63,14 +63,11 @@ class WebsocketClient {
 	_handleClose() {
 		if (this.expecting) this.expecting(null);
 		this.handleEvent("_closed");
-		if (this.intentConnected) {
-			this.connect(true);
-		}
-		/*for (let counter in this.waitingForConfirmation) {
-			if (!this.waitingForConfirmation[counter].ifUnhealthy) {
-				window.clearTimeout(this.waitingForConfirmation[counter].timeout);
+		window.setTimeout(() => {
+			if (this.intentConnected) {
+				this.connect(true);
 			}
-		}*/
+		}, 500);
 	}
 
 	leave() {
