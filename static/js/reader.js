@@ -41,10 +41,10 @@ function updateLine(line) {
   return p;
 }
 function sortLines(lines) {
-  lines.forEach(line => {
-    const p = history.querySelector(`p[tid="${line.tid}"]`);
-    p.style.setProperty("--order", Number(line.start));
-  });
+  const ps = Array.from(history.children);
+  const indices = Object.fromEntries(lines.map((l, i) => [l.tid, i]));
+  ps.sort((a,b) => indices[a.getAttribute("tid")] - indices[b.getAttribute("tid")]);
+  history.replaceChildren.apply(history, ps);
 }
 const {calculateShouldScroll, scrollToBottom} = setupStickyScroll(document.body.parentElement);
 

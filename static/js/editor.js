@@ -46,10 +46,10 @@ function updateLine(line) {
   }
 }
 function sortLines(lines) {
-  lines.forEach(line => {
-    const p = history.querySelector(`p[tid="${line.tid}"]`);
-    history.appendChild(p);
-  });
+  const ps = Array.from(history.children);
+  const indices = Object.fromEntries(lines.map((l, i) => [l.tid, i]));
+  ps.sort((a,b) => indices[a.getAttribute("tid")] - indices[b.getAttribute("tid")]);
+  history.replaceChildren.apply(history, ps);
 }
 function updateLineStatus(tid) {
   const p = history.querySelector(`p[tid="${tid}"]`);
