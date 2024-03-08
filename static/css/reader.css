@@ -142,6 +142,7 @@ body.error.refreshing {
   top: 5.5em;
   right: 1em;
   padding: .5em;
+  border: .1em solid #fff;
 }
 #language i {
   font-style: normal;
