@@ -130,6 +130,12 @@ const stt = new SpeechToText(lang);
 const source = new WebsocketEditor(socketURL, "default", lang);
 const transcript = new Transcript(null, lang);
 
+stt.subscribe("stop", () => {
+  if (!recognition.classList.contains('final')) {
+    recognition.innerText = "";
+  }
+});
+
 //let start = session.start || new Date();
 let start = new Date();
 stt.subscribe("speechStart", () => start = new Date());
