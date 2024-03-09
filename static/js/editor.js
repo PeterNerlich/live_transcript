@@ -122,6 +122,7 @@ editor.connect();
 
 editor.subscribe("existing", msg => {
   const lines = JSON.parse(msg.lines);
+  calculateShouldScroll();
   lines.forEach(line => {
     line = transcript.addOrUpdateLine(line);
     updateLine(line);
@@ -130,7 +131,9 @@ editor.subscribe("existing", msg => {
 });
 editor.subscribe(["new", "changed"], msg => {
   const line = transcript.addOrUpdateLine(msg.line);
+  calculateShouldScroll();
   updateLine(line);
+  scrollToBottom();
 });
 editor.subscribe(["pong", "becomesUnhealthy"], () => {
   const ping = isNaN(editor.connectionCondition.pingAvg) ? "?" : Math.round(editor.connectionCondition.pingAvg);

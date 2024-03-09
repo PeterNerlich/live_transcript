@@ -199,6 +199,7 @@ stt.begin();
 
 source.subscribe("existing", msg => {
   const lines = JSON.parse(msg.lines);
+  calculateShouldScroll();
   lines.forEach(line => {
     line = transcript.addOrUpdateLine(line);
     updateLine(line);
@@ -207,7 +208,9 @@ source.subscribe("existing", msg => {
 });
 source.subscribe(["new", "changed"], msg => {
   const line = transcript.addOrUpdateLine(msg.line);
+  calculateShouldScroll();
   updateLine(line);
+  scrollToBottom();
 });
 source.subscribe(["pong", "becomesUnhealthy"], () => {
   const ping = isNaN(source.connectionCondition.pingAvg) ? "?" : Math.round(source.connectionCondition.pingAvg);

@@ -73,13 +73,15 @@ function parseQueryArgs(query) {
 /**************************************/
 
 
-function setupStickyScroll(elem, debug) {
+function setupStickyScroll(elem, clearance, debug) {
 	let shouldScroll;
-	const target = (elem === document.body.parentElement) ? window : elem;
+	if (clearance === undefined) clearance = (target) => target.clientHeight * 0.2;
+	else if (typeof clearance !== "function") clearance = (target) => clearance;
+	if (debug) console.log(`setupStickyScroll(${elem}, ${clearance}, ${debug}) elem=${elem}`);
 
 	function calculateShouldScroll() {
-		shouldScroll = elem.scrollTop + elem.clientHeight === elem.scrollHeight;
-		if (debug) console.log(`calculateShouldScroll() shouldScroll=${shouldScroll} (${elem})`);
+		shouldScroll = elem.scrollTop + elem.clientHeight + clearance(elem) >= elem.scrollHeight;
+		if (debug) console.log(`calculateShouldScroll() shouldScroll=${shouldScroll} (scrollTop ${elem.scrollTop} + clientHeight ${elem.clientHeight} + ${clearance(elem)} >= scrollHeight ${elem.scrollHeight}, for ${elem})`);
 		return shouldScroll;
 	}
 	function scrollToBottom(force) {
