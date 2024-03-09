@@ -26,6 +26,7 @@ class WebsocketClient {
 			merged: [],
 			existing: [],
 			pong: [],
+			timeout: [],
 			version: [],
 			becomesHealthy: [],
 			becomesUnhealthy: [],
@@ -33,7 +34,7 @@ class WebsocketClient {
 		};
 		this.setupHooks();
 
-		this.keepalive = window.setInterval(this.checkConnection.bind(this), 2000);
+		this.keepalive = window.setInterval(this.checkConnection.bind(this), 2000 + (Math.random()*2000));
 		this.pings = {};
 		this._keepaliveID = 0;
 		this.connectionCondition = {
@@ -251,9 +252,14 @@ class WebsocketClient {
 		const condition = this.connectionCondition;
 		if (this.socket && this.socket.readyState === 1) {
 			const start = Date.now();
-			this.ping(this._keepaliveID++).then(() => {
+			this.ping(this._keepaliveID++, () => {
 				condition.ping = Date.now() - start;
-				condition.recentPings.push(condition.ping)
+				condition.recentPings.push(condition.ping);
+				condition.recentPings.splice(0, condition.recentPings.length - 4);
+				condition.pingAvg = condition.recentPings.reduce((acc, c) => acc + c, 0) / condition.recentPings.length;
+			}).then(() => {
+				condition.ping = Date.now() - start;
+				condition.recentPings.push(condition.ping);
 				condition.recentPings.splice(0, condition.recentPings.length - 3);
 				condition.pingAvg = condition.recentPings.reduce((acc, c) => acc + c, 0) / condition.recentPings.length;
 				condition.state = "alive";
@@ -271,22 +277,31 @@ class WebsocketClient {
 		}
 	}
 
-	ping(data) {
+	ping(data, lateResolve) {
 		return new Promise((res, rej) => {
 			this.socket.send(this.args(["ping", data]));
-			const timeout = window.setTimeout(rej.bind(this, "timeout"), 5000);
-			this.pings[data] = {timeout, res, rej};
+			const timeout = window.setTimeout((() => {
+				this.pings[data].alreadyTimedOut = true;
+				rej("timeout", data);
+				this.handleEvent("timeout", data);
+			}).bind(this), 6000);
+			if (lateResolve === undefined) lateResolve = () => {};
+			this.pings[data] = {timeout, res, rej, lateResolve};
 		});
 	}
 	pong(data) {
 		if (data in this.pings) {
-			window.clearTimeout(this.pings[data].timeout);
-			this.pings[data].res();
+			if (!this.pings[data].alreadyTimedOut) {
+				window.clearTimeout(this.pings[data].timeout);
+				this.pings[data].res(data);
+			} else {
+				this.pings[data].lateResolve(data);
+			}
 			delete this.pings[data];
 		} else {
 			console.warn(`Pong for unknown ping! ${data}`);
 		}
-		this.handleEvent("pong");
+		this.handleEvent("pong", data);
 	}
 
 	sendAndWaitForConfirm(verbs, ifUnhealthy) {
@@ -382,7 +397,7 @@ class WebsocketClient {
 	setupHooks() {
 		const debounceHealthy = stateDebounce(state => this.handleEvent(state ? "becomesHealthy" : "becomesUnhealthy"), 5000, true);
 
-		this.subscribe(["pong", "_closed"], () => {
+		this.subscribe(["pong", "timeout", "_closed"], () => {
 			debounceHealthy.call(this, this.isHealthy());
 		});
 		this.subscribe("becomesHealthy", () => {
