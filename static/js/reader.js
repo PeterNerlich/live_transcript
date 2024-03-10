@@ -16,7 +16,6 @@ function updateLine(line) {
     p = document.createElement('p');
     p.setAttribute("tid", line.tid);
     p.setAttribute("original", line.text);
-    p.style.setProperty("--order", Number(line.start));
     history.appendChild(p);
     p.innerText = line.text;
 
@@ -35,7 +34,6 @@ function updateLine(line) {
       i.parentElement.style.width = `calc(${.5 * i.scrollWidth}px - .1em)`;
     });
     p.setAttribute("tid", line.tid);
-    p.style.setProperty("--order", Number(line.start));
     p.classList.add("changed");
   }
   return p;

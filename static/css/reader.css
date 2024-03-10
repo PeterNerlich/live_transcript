@@ -17,8 +17,6 @@ body.error.refreshing {
 
 #history {
   font-size: 1.2em;
-  display: flex;
-  flex-direction: column;
 }
 @media screen and (min-width: 600px) {
   #history {
@@ -33,7 +31,6 @@ body.error.refreshing {
 #history p {
   margin: 0.4em;
   line-height: 1.3;
-  order: var(--order);
 }
 #history p:last-of-type {
   font-size: 1.2em;
