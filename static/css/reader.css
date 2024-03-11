@@ -3,19 +3,21 @@ body {
   min-height: 100vh;
   margin: 0;
   background-color: #000;
+  background-attachment: fixed;
   color: #fff;
   font-family: 'Ubuntu', sans-serif;
   line-height: 1.5;
   text-align: center;
 }
 body.error {
-  background: radial-gradient(calc(50vmin + 50vmax) at top right, #310, #000);
+  background-image: radial-gradient(calc(50vmin + 50vmax) at top right, #310, #000);
 }
 body.error.refreshing {
-  background: radial-gradient(calc(50vmin + 50vmax) at top right, #210, #000);
+  background-image: radial-gradient(calc(50vmin + 50vmax) at top right, #210, #000);
 }
 
 #history {
+  padding: 1em 0;
   font-size: 1.2em;
 }
 @media screen and (min-width: 600px) {
@@ -84,7 +86,7 @@ body.error.refreshing {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, transparent 20%, black 160%);
+  background-image: linear-gradient(90deg, transparent 20%, black 160%);
 }
 
 #version {
@@ -92,7 +94,7 @@ body.error.refreshing {
   top: 0;
   left: 0;
   padding: 0 .5em;
-  background: rgba(0,0,0, .5);
+  background-color: rgba(0,0,0, .5);
   font-size: .8em;
   color: #aaa;
   z-index: 100;
@@ -104,7 +106,7 @@ body.error.refreshing {
   right: 1em;
   min-width: 3em;
   min-height: 3.5em;
-  background: rgba(0,0,0, .5);
+  background-color: rgba(0,0,0, .5);
   font-family: monospace;
 }
 #connection-quality span {
@@ -153,7 +155,7 @@ body.error.refreshing {
   content: " ▲";
 }
 #language, #language .popup {
-  background: rgba(0,0,0, .5);
+  background-color: rgba(0,0,0, .5);
 }
 #language .popup {
   position: absolute;
@@ -176,5 +178,5 @@ body.error.refreshing {
 }
 #language .popup li:hover, #language .popup li:focus, #language .popup li:active {
   text-decoration: underline;
-  background: rgba(127,127,127, .5);
+  background-color: rgba(127,127,127, .5);
 }

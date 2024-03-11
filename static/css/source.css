@@ -3,16 +3,17 @@ body {
   min-height: 100vh;
   margin: 0;
   background-color: #000;
+  background-attachment: fixed;
   color: #fff;
   font-family: 'Ubuntu', sans-serif;
   line-height: 1.5;
   text-align: center;
 }
 body.error {
-  background: radial-gradient(calc(50vmin + 50vmax) at top right, #310, #000);
+  background-image: radial-gradient(calc(50vmin + 50vmax) at top right, #310, #000);
 }
 body.error.refreshing {
-  background: radial-gradient(calc(50vmin + 50vmax) at top right, #210, #000);
+  background-image: radial-gradient(calc(50vmin + 50vmax) at top right, #210, #000);
 }
 
 #recognition {
@@ -37,14 +38,14 @@ footer.keys code {
   padding: .2em .5em;
   border: .1em solid #888;
   border-radius: .4em;
-  background: #333;
+  background-color: #333;
 }
 
 #version {
   position: fixed;
   top: .1em;
   left: .5em;
-  background: rgba(0,0,0, .5);
+  background-color: rgba(0,0,0, .5);
   font-size: .8em;
   color: #aaa;
   z-index: 100;
@@ -56,7 +57,7 @@ footer.keys code {
   right: 1em;
   min-width: 3em;
   min-height: 4em;
-  background: rgba(0,0,0, .5);
+  background-color: rgba(0,0,0, .5);
   font-family: monospace;
   font-size: .8em;
   z-index: 100;
@@ -118,28 +119,28 @@ footer.keys code {
   font-family: inherit;
   line-height: inherit;
   color: inherit;
-  background: transparent;
+  background-color: transparent;
   border: none;
 }
 
 #transcript p[tid]:nth-of-type(even) {
-  background: #161616;
+  background-color: #161616;
   z-index: 1;
 }
 
 #transcript p:hover {
-  background: #222 !important;
+  background-color: #222 !important;
   position: relative;
   z-index: 2;
 }
 #transcript p:focus-within {
-  background: #334 !important;
+  background-color: #334 !important;
   color: #fff;
 }
 
 #transcript p.changed {
-  background: #330;
+  background-color: #330;
 }
 #transcript p.pending {
-  background: #220;
+  background-color: #220;
 }
