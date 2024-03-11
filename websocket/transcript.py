@@ -145,7 +145,7 @@ class Line:
 	def __init__(self, start: float, end: float, text: str = "", tid: str = None, previously_associated_tids: set = set()):
 		if tid is None:
 			tid = uuid.uuid4()
-		assert start < end, "Start of line has to be before end"
+		assert start <= end, "Start of line has to be before end"
 		self.start = start
 		self.end = end
 		self.text = text
