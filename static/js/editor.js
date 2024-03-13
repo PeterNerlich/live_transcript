@@ -10,6 +10,8 @@ const history = document.getElementById("transcript");
 const todayMidnight = new Date();
 todayMidnight.setHours(0,0,0,0);
 
+const keyhints = new KeyHints(document.body.parentElement, document.querySelector("footer.keys"));
+
 function updateLine(line) {
   let p = history.querySelector(`p[tid="${line.tid}"]`);
   let label, span, i, input;
@@ -26,8 +28,6 @@ function updateLine(line) {
     history.appendChild(p);
 
     setTimeout(updateSize.bind(input), 0);
-    //input.addEventListener('change', updateLine);
-    input.addEventListener('keydown', lineNav);
 
   } else {
     label = p.querySelector('label');
@@ -66,38 +66,102 @@ function updateSize() {
   this.style.height = `${this.scrollHeight}px`;
 }
 
-function lineNav(e) {
-  const tid = e.target.name;
-  const content = e.target.value;
-  const line = transcript.lines[tid];
-  const p = e.target.closest('p[tid]');
-  setTimeout(updateSize.bind(e.target), 0);
-  setTimeout(updateLineStatus.bind(this, tid), 0);
-
-  if (e.key == "Enter" && !e.shiftKey && !e.ctrlKey) {
-    p.classList.add("pending");
-    editor.change(tid, content).then(() => {
-      const line = transcript.lines[tid];
-      transcript.changeLine(line);
-      p.classList.remove("changed", "pending");
-    }).catch(() => {
-      p.classList.remove("pending");
-    });
-  } else if (e.key == "Escape") {
-    e.target.value = line.text;
-    p.classList.remove("changed");
-    console.log(`lineNav(Escape) '${content}',  '${line.text}'`);
-  } else if (e.key == "PageUp") {
-    if (p.previousElementSibling !== null)
-      p.previousElementSibling.querySelector('textarea').focus();
-  } else if (e.key == "PageDown") {
-    if (p.nextElementSibling !== null)
-      p.nextElementSibling.querySelector('textarea').focus();
-  } else {
-    return;
+function goToPreviousLine(e) {
+  const focus = document.activeElement;
+  const p = focus.closest('p[tid]');
+  if (p && p.previousElementSibling) {
+    p.previousElementSibling.querySelector('textarea').focus();
   }
   e.preventDefault();
 }
+function goToNextLine(e) {
+  const focus = document.activeElement;
+  const p = focus.closest('p[tid]');
+  if (p && p.nextElementSibling) {
+    p.nextElementSibling.querySelector('textarea').focus();
+  }
+  e.preventDefault();
+}
+
+function submitChanges(e) {
+  const focus = document.activeElement;
+  const p = focus.closest('p[tid]');
+  if (focus && ["TEXTAREA", "INPUT"].includes(focus.nodeName)) {
+    if (p) p.classList.add("pending");
+    const tid = focus.name;
+    const content = focus.value;
+    const line = transcript.lines[tid];
+    editor.change(tid, content).then(() => {
+      const line = transcript.lines[tid];
+      transcript.changeLine(line);
+      if (p) p.classList.remove("changed", "pending");
+    }).catch(() => {
+      if (p) p.classList.remove("pending");
+    });
+    e.preventDefault();
+  }
+}
+
+function discardChanges(e) {
+  const focus = document.activeElement;
+  const p = focus.closest('p[tid]');
+  if (focus && ["TEXTAREA", "INPUT"].includes(focus.nodeName)) {
+    const tid = focus.name;
+    const line = transcript.lines[tid];
+    focus.value = line.text;
+    if (p) p.classList.remove("changed");
+    setTimeout(updateSize.bind(focus), 0);
+    setTimeout(updateLineStatus.bind(this, tid), 0);
+    e.preventDefault();
+  }
+}
+
+function newLine(e) {
+  const focus = document.activeElement;
+  if (focus && ["TEXTAREA", "INPUT"].includes(focus.nodeName)) {
+    const tid = focus.name;
+    focus.setRangeText("\n", focus.selectionStart, focus.selectionEnd, "end");
+    enqueueUpdateLine({target: focus});
+  }
+  e.preventDefault();
+}
+
+function restartLine(e) {
+  stt.restart();
+  e.preventDefault();
+}
+
+const enqueueUpdateLine = (debug => {
+  let timeout = {};
+  return e => {
+    const focus = e.target;
+    if (focus) {
+      const tid = focus.name;
+      if (tid && !timeout[tid]) {
+        if (debug) console.log(`enqueueUpdateLine() for ${tid}`);
+        timeout = window.setTimeout(() => {
+          if (debug) console.log(`updating line ${tid} now`);
+          updateSize.call(focus);
+          updateLineStatus.call(focus, tid);
+          delete timeout[tid];
+        }, 0);
+      } else if (debug) {
+        console.log(`not enqueuing ${tid} again`);
+      }
+    } else if (debug) {
+      console.log(`not enqueuing, no focus`);
+    }
+  };
+})(false);
+
+keyhints.addHint({key: "PageUp"}, goToPreviousLine, "PgUp", "Previous line", 10, true);
+keyhints.addHint({key: "PageDown"}, goToNextLine, "PgDown", "Next line", 11, true);
+keyhints.addHint({ctrlKey: false, shiftKey: false, key: "Enter"}, submitChanges, "⏎", "Submit changes", 20, true);
+keyhints.addHint({ctrlKey: false, shiftKey: true, key: "Enter"}, newLine, "⇧+⏎", "New Line", 21, true);
+keyhints.addHint({key: "Escape"}, discardChanges, "ESC", "Discard changes", 22, true);
+keyhints.addHint({composed: true, ctrlKey: true, key: "Enter", type: "keydown"}, restartLine, "CTRL+⏎", "Force recognition to start new line", 24, true);
+
+keyhints.addHint({ctrlKey: false}, enqueueUpdateLine, "", "Update line", 30, true, true);
 
 const {calculateShouldScroll, scrollToBottom} = setupStickyScroll(document.body.parentElement);
 
@@ -107,11 +171,6 @@ const transcript = new Transcript(null, lang);
 //let start = session.start || new Date();
 let start = new Date();
 
-document.addEventListener("keydown", e => {
-  if (e.composed && e.ctrlKey && (e.key === "Enter" || e.key === "Space")) {
-    stt.restart();
-  }
-});
 window.addEventListener("resize", e => {
   document.querySelectorAll("#transcript [tid] textarea").forEach(input => updateSize.call(input));
 });

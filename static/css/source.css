@@ -33,12 +33,28 @@ footer.keys > div {
   padding: 0.5em;
   flex-grow: 1;
   text-wrap: nowrap;
+  color: #eee;
+  cursor: pointer;
+}
+footer.keys > div:hover, footer.keys > div:active {
+  color: #ffe;
+}
+footer.keys > div.pressed {
+  color: #fff;
 }
 footer.keys code {
   padding: .2em .5em;
   border: .1em solid #888;
   border-radius: .4em;
   background-color: #333;
+}
+footer.keys > div:hover code, footer.keys > div:active code {
+  border-color: #fff;
+  background-color: #445;
+}
+footer.keys > div.pressed code {
+  border-color: #fff;
+  background-color: #556;
 }
 
 #version {
