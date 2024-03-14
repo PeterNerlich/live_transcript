@@ -65,7 +65,7 @@ reader.subscribe(["new", "changed"], msg => {
 transcript.subscribe("new", line => {
   calculateShouldScroll();
   updateLine(line);
-  //sortLines(transcript.linesSorted());
+  sortLines(transcript.linesSorted());
   scrollToBottom();
 });
 transcript.subscribe("changed", line => {

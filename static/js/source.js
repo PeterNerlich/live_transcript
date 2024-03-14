@@ -45,6 +45,7 @@ function updateLine(line) {
   } else {
     input.value = line.text;
   }
+  return p;
 }
 function sortLines(lines) {
   const ps = Array.from(history.children);
@@ -117,7 +118,7 @@ function discardChanges(e) {
   }
 }
 
-function newLine(e) {
+function lineBreak(e) {
   const focus = document.activeElement;
   if (focus && ["TEXTAREA", "INPUT"].includes(focus.nodeName)) {
     const tid = focus.name;
@@ -130,6 +131,20 @@ function newLine(e) {
 function restartLine(e) {
   stt.restart();
   e.preventDefault();
+}
+
+function newManualLine(e) {
+  const start = new Date();
+  const end = start;
+  const line = new Line({tid: new UUIDv4(), start: start, end: end, text: ""});
+  calculateShouldScroll();
+  const p = updateLine(line);
+  scrollToBottom();
+  const input = p.querySelector("textarea");
+  if (input) input.focus();
+  e.preventDefault();
+  source.submit(line.toJSON());
+  transcript.addLine(line);
 }
 
 const enqueueUpdateLine = (debug => {
@@ -158,9 +173,10 @@ const enqueueUpdateLine = (debug => {
 keyhints.addHint({key: "PageUp"}, goToPreviousLine, "PgUp", "Previous line", 10, true);
 keyhints.addHint({key: "PageDown"}, goToNextLine, "PgDown", "Next line", 11, true);
 keyhints.addHint({ctrlKey: false, shiftKey: false, key: "Enter"}, submitChanges, "⏎", "Submit changes", 20, true);
-keyhints.addHint({ctrlKey: false, shiftKey: true, key: "Enter"}, newLine, "⇧+⏎", "New Line", 21, true);
+keyhints.addHint({ctrlKey: false, shiftKey: true, key: "Enter"}, lineBreak, "⇧+⏎", "Line break", 21, true);
 keyhints.addHint({key: "Escape"}, discardChanges, "ESC", "Discard changes", 22, true);
 keyhints.addHint({composed: true, ctrlKey: true, key: "Enter", type: "keydown"}, restartLine, "CTRL+⏎", "Force recognition to start new line", 24, true);
+keyhints.addHint({composed: true, ctrlKey: true, key: "l", type: "keydown"}, newManualLine, "CTRL+L", "Manually insert a new line now", 26, true);
 
 keyhints.addHint({ctrlKey: false}, enqueueUpdateLine, "", "Update line", 30, true, true);
 
