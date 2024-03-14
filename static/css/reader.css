@@ -171,6 +171,8 @@ body.error.refreshing {
 }
 #language .popup li {
   padding: .5em 1em;
+}
+#language .popup li, #language .popup li * {
   cursor: pointer;
 }
 #language:hover > .popup, #language:focus > i.popup, #language:active > i.popup {
