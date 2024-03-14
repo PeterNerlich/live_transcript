@@ -183,10 +183,20 @@ function displayRecognition(results, final) {
     recognition.removeChild(recognition.children[i]);
     i++;
   }
+  const restartIndicator = document.querySelector('footer.keys [data-display="CTRL+⏎"]');
   if (final) {
     recognition.classList.add('final');
+    recognition.classList.remove("long");
+    if (restartIndicator) restartIndicator.classList.remove("alert");
   } else {
     recognition.classList.remove('final');
+    if (recognition.innerText.length > 200) {
+      recognition.classList.add("long");
+      if (restartIndicator) restartIndicator.classList.add("alert");
+    } else {
+      recognition.classList.remove("long");
+      if (restartIndicator) restartIndicator.classList.remove("alert");
+    }
   }
 }
 

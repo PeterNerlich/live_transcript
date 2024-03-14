@@ -117,6 +117,7 @@ class KeyHints {
 					div.appendChild(document.createElement("code"));
 					div.append(document.createTextNode(" "));
 				}
+				div.setAttribute("data-display", hints[i].display);
 				const code = div.childNodes[0];
 				const text = div.childNodes[1];
 				if (code.innerText !== hints[i].display) {

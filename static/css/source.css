@@ -23,6 +23,9 @@ body.error.refreshing {
   color: #080;
   font-style: italic;
 }
+#recognition.long {
+  color: #eeb;
+}
 
 footer.keys {
   display: flex;
@@ -36,6 +39,9 @@ footer.keys > div {
   color: #eee;
   cursor: pointer;
 }
+footer.keys > div.alert {
+  color: #fed;
+}
 footer.keys > div:hover, footer.keys > div:active {
   color: #ffe;
 }
@@ -48,6 +54,11 @@ footer.keys code {
   border-radius: .4em;
   background-color: #333;
 }
+footer.keys > div.alert code {
+  border-color: #ff8;
+  background-color: #443;
+  animation: alert 1s linear infinite;
+}
 footer.keys > div:hover code, footer.keys > div:active code {
   border-color: #fff;
   background-color: #445;
@@ -55,6 +66,29 @@ footer.keys > div:hover code, footer.keys > div:active code {
 footer.keys > div.pressed code {
   border-color: #fff;
   background-color: #556;
+}
+
+@keyframes alert {
+  0% {
+    border-color: #d88;
+    background-color: #433;
+  }
+  10% {
+    border-color: #fd8;
+    background-color: #443;
+  }
+  50% {
+    border-color: #fd8;
+    background-color: #443;
+  }
+  60% {
+    border-color: #d88;
+    background-color: #433;
+  }
+  100% {
+    border-color: #d88;
+    background-color: #433;
+  }
 }
 
 #version {
