@@ -200,11 +200,13 @@ async def handler(websocket):
 	except ConnectionClosedOK:
 		print(f"disconnected unexpectedly {websocket}")
 	finally:
-		if role and session and language:
+		try:
 			channels[role][session][language].remove(websocket)
 			if len(channels[role][session][language]) == 0 and language in translators:
 				translators[language].pause()
 				print(f"pausing translator for {language} of {session}")
+		except UnboundLocalError:
+			pass
 		if websocket in connected:
 			connected.remove(websocket)
 		print(f"stopped {websocket}")
