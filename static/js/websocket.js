@@ -100,12 +100,15 @@ class WebsocketClient {
 	}
 
 	enterChannel() {
-		return this.sendAndWaitForConfirm(["join", `/${this.role}/${this.session}/${this.language}`, "id", this.id], true)
-			.then(() => this.connectionCondition.channel = `/${this.role}/${this.session}/${this.language}`)
-			.catch(() => {
-				delete this.connectionCondition.channel;
-				if (this.intentConnected) return this.enterChannel();
-			});
+		const helper = version => {
+			return this.sendAndWaitForConfirm(["join", `/${this.role}/${this.session}/${this.language}`, "id", this.id, version], true)
+				.then(() => this.connectionCondition.channel = `/${this.role}/${this.session}/${this.language}`)
+				.catch(() => {
+					delete this.connectionCondition.channel;
+					if (this.intentConnected) return this.enterChannel();
+				});
+		}
+		return getClientVersion().then(helper).catch(helper.bind(this, "unknown"));
 	}
 
 	expect(msgs) {

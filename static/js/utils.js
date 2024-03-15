@@ -25,25 +25,40 @@ function logAll(obj, name, except) {
 /**************************************/
 
 
+const getClientVersion = (() => {
+	let version;
+
+	return url => {
+		if (version === undefined) {
+			return fetch(url || "version.json").then(response => {
+				if (!response.ok) {
+					throw new Error("HTTP error " + response.status);
+				}
+				return response.json();
+			}).then(json => {
+				return json.releaseTag;
+			}).catch(error => {
+				version = null;
+				throw error;
+			});
+		} else {
+			return version;
+		}
+	}
+})();
+
 function displayClientVersion() {
 	const versionDiv = document.getElementById("version");
 	const clientVersionDiv = versionDiv ? versionDiv.querySelector("#client") : null;
 	const fallback = "version.json";
 	const url = clientVersionDiv ? clientVersionDiv.getAttribute("data-src") || fallback : fallback;
-	return fetch(url).then(response => {
-		if (!response.ok) {
-			throw new Error("HTTP error " + response.status);
-		}
-		return response.json();
-	}).then(json => {
-		if (clientVersionDiv) {
-			clientVersionDiv.innerText = `Version: ${json.releaseTag}`;
-		}
-	}).catch(e => {
-		if (clientVersionDiv) {
+	if (clientVersionDiv) {
+		return getClientVersion(url).then(version => {
+			clientVersionDiv.innerText = `Version: ${version}`;
+		}).catch(e => {
 			clientVersionDiv.innerText = "Version: Unknown";
-		}
-	});
+		});
+	}
 }
 
 function displayServerVersion(version) {
