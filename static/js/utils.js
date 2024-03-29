@@ -26,11 +26,11 @@ function logAll(obj, name, except) {
 
 
 const getClientVersion = (() => {
-	let version;
+	let promise;
 
 	return url => {
-		if (version === undefined) {
-			return fetch(url || "version.json").then(response => {
+		if (promise === undefined) {
+			promise = fetch(url || "version.json").then(response => {
 				if (!response.ok) {
 					throw new Error("HTTP error " + response.status);
 				}
@@ -41,9 +41,8 @@ const getClientVersion = (() => {
 				version = null;
 				throw error;
 			});
-		} else {
-			return version;
 		}
+		return promise;
 	}
 })();
 
