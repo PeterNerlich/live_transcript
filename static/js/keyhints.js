@@ -72,6 +72,7 @@ class KeyHints {
 			hidden: hidden
 		}
 		this.queueUpdateLegend();
+		return this.hints[key];
 	}
 	removeHint(keycombination) {
 		const key = JSON.stringify(keycombination);

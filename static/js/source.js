@@ -175,7 +175,25 @@ keyhints.addHint({key: "PageDown"}, goToNextLine, "PgDown", "Next line", 11, tru
 keyhints.addHint({ctrlKey: false, shiftKey: false, key: "Enter"}, submitChanges, "⏎", "Submit changes", 20, true);
 keyhints.addHint({ctrlKey: false, shiftKey: true, key: "Enter"}, lineBreak, "⇧+⏎", "Line break", 21, true);
 keyhints.addHint({key: "Escape"}, discardChanges, "ESC", "Discard changes", 22, true);
-keyhints.addHint({composed: true, ctrlKey: true, key: "Enter", type: "keydown"}, restartLine, "CTRL+⏎", "Force recognition to start new line", 24, true);
+const ctrlEnter = keyhints.addHint({composed: true, ctrlKey: true, key: "Enter", type: "keydown"}, restartLine, "CTRL+⏎", "Force recognition to start new line", 24, true);
+
+function stopRecognition(e) {
+  stt.stop();
+  ctrlEnter.description = "Resume recognition";
+  keyhints.queueUpdateLegend();
+  const restartIndicator = document.querySelector('footer.keys [data-display="CTRL+⏎"]');
+  restartIndicator.classList.add('alert');
+}
+
+ctrlEnter.fn = e => {
+  restartLine(e);
+  ctrlEnter.description = "Force recognition to start new line";
+  keyhints.queueUpdateLegend();
+  const restartIndicator = document.querySelector('footer.keys [data-display="CTRL+⏎"]');
+  restartIndicator.classList.remove('alert');
+};
+
+keyhints.addHint({composed: true, ctrlKey: true, code: "Space", type: "keydown"}, stopRecognition, "CTRL+SPACE", "Pause recognition", 24, true);
 keyhints.addHint({composed: true, ctrlKey: true, key: "l", type: "keydown"}, newManualLine, "CTRL+L", "Manually insert a new line now", 26, true);
 
 keyhints.addHint({ctrlKey: false}, enqueueUpdateLine, "", "Update line", 30, true, true);
