@@ -20,11 +20,20 @@ function updateLine(line) {
     p.innerText = line.text;
 
   } else {
-    const original = p.getAttribute("original") || p.innerText;
+    const original = (o => o === null ? p.innerText : o)(p.getAttribute("original"));
     p.innerHTML = wordDiff(original, line.text).html((x, tag) => {
       x = x.join("");
       if (['insert', 'replace'].includes(tag)) {
-        return x.replaceAll('\n', '⏎<br>');
+        // only replace leading and trailing newlines with ⏎
+        const segments = x.match(/(\s+|[^\s]+)/g) || [];
+        for ([i, seg] of segments.entries()) {
+          if (i == 0 || i == segments.length - 1) {
+            segments[i] = segments[i].replaceAll('\n', '⏎<br>');
+          } else {
+            segments[i] = segments[i].replaceAll('\n', '<br>');
+          }
+        }
+        return segments.join("");
       } else if (tag == 'delete') {
         return `<i>${x.replaceAll('\n', '⏎')}</i>`;
       } else {
