@@ -80,6 +80,10 @@ class KeyHints {
 		delete this.hints[key];
 		this.queueUpdateLegend();
 	}
+	clearHints() {
+		this.hints = {};
+		this.queueUpdateLegend();
+	}
 
 	changeScope(newScope) {
 		if (this.scope !== newScope) {
@@ -110,19 +114,19 @@ class KeyHints {
 					div.children.length == 1 &&
 					div.childNodes.length == 2 &&
 					div.childNodes[0].nodeType == document.ELEMENT_NODE &&
-					div.childNodes[0].tagName == "CODE" &&
+					div.childNodes[0].tagName == "KBD" &&
 					div.childNodes[1].nodeType == document.TEXT_NODE
 				);
 				if (shouldRedo) {
 					div.replaceChildren();
-					div.appendChild(document.createElement("code"));
+					div.appendChild(document.createElement("kbd"));
 					div.append(document.createTextNode(" "));
 				}
 				div.setAttribute("data-display", hints[i].display);
-				const code = div.childNodes[0];
+				const kbd = div.childNodes[0];
 				const text = div.childNodes[1];
-				if (code.innerText !== hints[i].display) {
-					code.innerText = hints[i].display;
+				if (kbd.innerText !== hints[i].display) {
+					kbd.innerText = hints[i].display;
 				}
 				if (text.data !== ` ${hints[i].description}`) {
 					text.data = ` ${hints[i].description}`;

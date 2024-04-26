@@ -48,22 +48,22 @@ footer.keys > div:hover, footer.keys > div:active {
 footer.keys > div.pressed {
   color: #fff;
 }
-footer.keys code {
+footer.keys kbd {
   padding: .2em .5em;
   border: .1em solid #888;
   border-radius: .4em;
   background-color: #333;
 }
-footer.keys > div.alert code {
+footer.keys > div.alert kbd {
   border-color: #ff8;
   background-color: #443;
   animation: alert 1s linear infinite;
 }
-footer.keys > div:hover code, footer.keys > div:active code {
+footer.keys > div:hover kbd, footer.keys > div:active kbd {
   border-color: #fff;
   background-color: #445;
 }
-footer.keys > div.pressed code {
+footer.keys > div.pressed kbd {
   border-color: #fff;
   background-color: #556;
 }
