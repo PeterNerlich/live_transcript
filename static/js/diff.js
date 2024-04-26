@@ -37,7 +37,7 @@ class SequenceMatcher {
 		this.b2j = b2j;
 
 		let indices;
-		for (const [i, elt] of b.split('').entries()) {
+		for (const [i, elt] of (typeof b === "string" ? b.split('') : b).entries()) {
 			indices = b2j[elt];
 			if (indices === undefined) {
 				indices = b2j[elt] = [];
@@ -331,12 +331,13 @@ class SequenceMatcher {
 class Differ {
 	constructor(linejunk, charjunk) {
 		this.linejunk = linejunk;
-		this.charjunk = charjunk
+		this.charjunk = charjunk;
 	}
 
 	* compare(a, b) {
-		const cruncher = SequenceMatcher(this.linejunk, a, b);
+		const cruncher = new SequenceMatcher(this.linejunk, a, b);
 		for (let [tag, alo, ahi, blo, bhi] of cruncher.get_opcodes()) {
+			let g;
 			if (tag == 'replace')
 				g = this._fancy_replace(a, alo, ahi, b, blo, bhi);
 			else if (tag == 'delete')
@@ -379,8 +380,9 @@ class Differ {
 		// least cutoff; best_ratio tracks the best score seen so far
 		let best_ratio = 0.74;
 		let cutoff = 0.75;
-		let cruncher = SequenceMatcher(this.charjunk);
+		let cruncher = new SequenceMatcher(this.charjunk);
 		let eqi, eqj = null; // 1st indices of equal lines (if any)
+		let best_i, best_j = null;
 
 		// search for the pair that matches best without being identical
 		// (identical lines must be junk lines, & we don't want to synch up
@@ -436,25 +438,26 @@ class Differ {
 		yield* this._fancy_helper(a, alo, best_i, b, blo, best_j);
 
 		// do intraline marking on the synch pair
-		aelt = a[best_i];
-		belt = b[best_j];
+		let aelt = a[best_i];
+		let belt = b[best_j];
 		if (eqi === null) {
 			// pump out a '-', '?', '+', '?' quad for the synched lines
-			let atags = btags = "";
+			let atags = "";
+			let btags = "";
 			cruncher.set_seqs(aelt, belt);
 			for (let [tag, ai1, ai2, bj1, bj2] of cruncher.get_opcodes()) {
-				la = ai2 - ai1;
-				lb = bj2 - bj1;
+				let la = ai2 - ai1;
+				let lb = bj2 - bj1;
 				if (tag == 'replace') {
-					atags += '^' * la;
-					btags += '^' * lb;
+					atags += '^'.repeat(la);
+					btags += '^'.repeat(lb);
 				} else if (tag == 'delete') {
-					atags += '-' * la
+					atags += '-'.repeat(la);
 				} else if (tag == 'insert') {
-					btags += '+' * lb
+					btags += '+'.repeat(lb);
 				} else if (tag == 'equal') {
-					atags += ' ' * la
-					btags += ' ' * lb
+					atags += ' '.repeat(la);
+					btags += ' '.repeat(lb);
 				} else {
 					throw Error(`unknown tag ${tag}`);
 				}
@@ -485,8 +488,8 @@ class Differ {
 	}
 
 	* _qformat(aline, bline, atags, btags) {
-		atags = _keep_original_ws(aline, atags).rstrip();
-		btags = _keep_original_ws(bline, btags).rstrip();
+		atags = _keep_original_ws(aline, atags).trimEnd();
+		btags = _keep_original_ws(bline, btags).trimEnd();
 
 		yield "- " + aline;
 		if (atags) {
@@ -499,6 +502,23 @@ class Differ {
 		}
 	}
 }
+
+
+function _keep_original_ws(s, tag_s) {
+	// Replace whitespace with the original whitespace characters in `s`
+	let result = '';
+	for (let i = 0; i < s.length; i++) {
+		const c = s.charAt(i);
+		const tag_c = tag_s.charAt(i);
+		if (tag_c === ' ' && /\s/.test(c)) {
+			result += c;
+		} else {
+			result += tag_c;
+		}
+	}
+	return result;
+}
+
 
 class Diff {
 	constructor(a, b) {
@@ -528,7 +548,19 @@ class Diff {
 
 }
 
+
+function ISLINEJUNK(line) {
+    const pat = /^\s*(?:#\s*)?$/;
+    return pat.test(line);
+}
+
+function ISCHARACTERJUNK(ch) {
+    const ws = " \t";
+    return ws.includes(ch);
+}
+
+
 function ndiff(a, b, linejunk, charjunk) {
-	if (charjunk === undefined) charjunk = this.ISCHARACTERCHARJUNK;
+	if (charjunk === undefined) charjunk = ISCHARACTERJUNK;
 	return new Differ(linejunk, charjunk).compare(a, b);
 }

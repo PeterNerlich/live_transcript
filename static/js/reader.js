@@ -21,7 +21,8 @@ function updateLine(line) {
 
   } else {
     const original = p.getAttribute("original") || p.innerText;
-    p.innerHTML = new Diff(original, line.text).html((x, tag) => {
+    p.innerHTML = wordDiff(original, line.text).html((x, tag) => {
+      x = x.join("");
       if (['insert', 'replace'].includes(tag)) {
         return x.replaceAll('\n', '⏎<br>');
       } else if (tag == 'delete') {
