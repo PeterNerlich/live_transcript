@@ -1,6 +1,7 @@
 
 import os
 import requests
+import logging
 import asyncio
 from async_lru import alru_cache
 
@@ -33,6 +34,12 @@ class Translator:
 		self._background_tasks = set()
 		self._paused = paused
 
+		self.logger = logging.getLogger(f"Translator({self.source_transcript.language}, {self.target_transcript.language})")
+		self.logger.setLevel(logging.DEBUG)
+		log_handler = logging.FileHandler(filename=f"{__name__}.{self.source_transcript.language}_{self.target_transcript.language}.log", encoding="utf-8")
+		log_handler.setFormatter(logging.Formatter(fmt='%(asctime)s [%(name)s] %(levelname)s: %(message)s'))
+		self.logger.addHandler(log_handler)
+
 	async def translate(self, line):
 		if (line.tid in self.target_transcript.lines):
 			target = self.target_transcript.lines[line.tid]
@@ -57,6 +64,7 @@ class Translator:
 				"translation": translation,
 			})
 		except Exception as e:
+			self.logger.error("failed to translate: %s", e)
 			print(f"failed to translate: {e}")
 			self.handle_event("error", {
 				"original_line": line,
@@ -92,6 +100,7 @@ class Translator:
 		self._paused = val
 		if not val and old_val:
 			print(f"### queue got unpaused, translating {len(self.queued)} lines")
+			self.logger.info("queue got unpaused, translating %s lines", len(self.queued))
 			while self.queued:
 				line = self.queued[0]
 				self.queued = self.queued[1:]
@@ -103,6 +112,7 @@ class Translator:
 
 	@alru_cache(maxsize=512)
 	async def cached_send_request(self, text: str, source_lang: str, target_lang: str):
+		self.logger.info("translating %i characters: %s", len(text), text)
 		return await self.send_request(text, source_lang, target_lang)
 
 	async def send_request(self, text: str, source_lang: str, target_lang: str):

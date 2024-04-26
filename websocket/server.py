@@ -4,11 +4,24 @@ import os
 import asyncio
 import datetime
 import websockets
+import logging
 from websockets.exceptions import ConnectionClosedOK
 
 from transcript import Session, Transcript, Line
 from translator import DeepLTranslator, DummyTranslator
 from util import version
+
+logging.basicConfig(
+	filename='server.log',
+	encoding='utf-8',
+	format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+	level=logging.DEBUG,
+)
+logger = logging.getLogger(f"{__name__}.handler")
+logger.setLevel(logging.DEBUG)
+log_handler = logging.FileHandler(filename=f"server.handler.log", encoding="utf-8")
+log_handler.setFormatter(logging.Formatter(fmt='%(asctime)s [%(name)s] %(levelname)s: %(message)s'))
+logger.addHandler(log_handler)
 
 SEP = " "
 QUOTE = chr(27) # Escape
@@ -27,6 +40,7 @@ Translator = (
 	DeepLTranslator
 )
 if Translator is DummyTranslator:
+	logger.warning("Using DummyTranslator! (%s)", repr(os.environ.get('DUMMY')))
 	print(f"Using DummyTranslator! ({repr(os.environ.get('DUMMY'))})")
 
 translators = {
@@ -42,6 +56,7 @@ sessions = set([default_session])
 def save_session_srt(session):
 	date = datetime.datetime.fromtimestamp(session.date).isoformat()
 	now = datetime.datetime.now().isoformat()
+	logger.info("Stopped server. Saving transcripts as %s_%s.*.srt", date, now)
 	for language, transcript in session.transcripts.items():
 		with open(f"{date}_{now}.{session.name}.{language}.srt", "w") as outfile:
 			outfile.write(transcript.to_srt())
@@ -125,10 +140,12 @@ class NonexistantChannelException(TCException):
 #websockets.broadcast(connected, "Hello!")
 
 async def handler(websocket):
+	logger.info("[%s] New connection", websocket.id)
 	print(f"new connection")
 	try:
 		await websocket.send(args(["version", version.get("releaseTag", "Unknown")]))
 		cmd = await expect("join", websocket)
+		logger.info("[%s] cmd: %s", websocket.id, cmd)
 		print(f"cmd: {cmd}")
 		_, role, session, language = cmd["channel"].split("/")
 		channel = (role, session, language)
@@ -147,6 +164,7 @@ async def handler(websocket):
 			channels[role][session][language] = set()
 		if len(channels[role][session][language]) == 0 and language in translators:
 			translators[language].unpause()
+			logger.info("[%s] unpausing translator for %s of %s", websocket.id, language, session)
 			print(f"unpausing translator for {language} of {session}")
 		channels[role][session][language].add(websocket)
 		await websocket.send(args(["confirm", cmd["counter"], cmd["channel"]]))
@@ -167,6 +185,7 @@ async def handler(websocket):
 
 		while True:
 			cmd = await expect(expected, websocket)
+			logger.info("[%s] cmd: %s", websocket.id, cmd)
 			print(f"cmd: {cmd}")
 			if cmd["cmd"] == "leave":
 				if cmd["channel"] == f"/{channel}":
@@ -191,24 +210,29 @@ async def handler(websocket):
 				line = transcript.merge_lines(cmd["tid_one"], cmd["tid_two"])
 				await websocket.send(args(["confirm", cmd["counter"], str(line)]))
 			else:
+				logger.info("[%s] Unhandled but expected command: %s", websocket.id, cmd)
 				print(f"Unhandled but expected command: {cmd}")
 	except (TCException, ValueError, AssertionError) as e:
+		logger.error("[%s] Exception: %s", websocket.id, repr(e))
 		print(repr(e))
 		def sanitize(s):
 			return s.split(" (from <websockets.")[0]
 		await websocket.send(args([f"{e.__class__.__name__}({', '.join(map(sanitize, e.args))})"]))
 	except ConnectionClosedOK:
+		logger.warning("[%s] Disconnected unexpectedly", websocket.id)
 		print(f"disconnected unexpectedly {websocket}")
 	finally:
 		try:
 			channels[role][session][language].remove(websocket)
 			if len(channels[role][session][language]) == 0 and language in translators:
 				translators[language].pause()
+				logger.info("[%s] Pausing translator for %s of %s", websocket.id, language, session)
 				print(f"pausing translator for {language} of {session}")
 		except UnboundLocalError:
 			pass
 		if websocket in connected:
 			connected.remove(websocket)
+		logger.info("[%s] Handler stopped.", websocket.id)
 		print(f"stopped {websocket}")
 
 
@@ -383,6 +407,7 @@ def args(l):
 
 async def main():
 	async with websockets.serve(handler, "0.0.0.0", 8765):
+		logger.info("Server started: %s:%i", "0.0.0.0", 8765)
 		print("server started")
 		while True:
 			await asyncio.gather(
