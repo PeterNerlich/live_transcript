@@ -205,6 +205,11 @@ if (Set.prototype.union === undefined) {
 	}
 }
 
+const isFunction = function(obj) {
+  return !!(obj && obj.constructor && obj.call && obj.apply);
+};
+window.IsCallable = typeof IsCallable === "undefined" ? isFunction : IsCallable;
+
 if (Array.prototype.toSorted === undefined) {
 	Array.prototype.toSorted = function toSorted(comparefn) {
 		if (typeof comparefn !== 'undefined' && !IsCallable(comparefn))
