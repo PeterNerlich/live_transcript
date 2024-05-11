@@ -142,7 +142,7 @@ function newManualLine(e) {
   const input = p.querySelector("textarea");
   if (input) input.focus();
   e.preventDefault();
-  source.submit(line.toJSON());
+  editor.submit(line.toJSON());
   transcript.addLine(line);
 }
 
