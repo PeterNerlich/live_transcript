@@ -27,13 +27,13 @@ function updateLine(line) {
     p.appendChild(label);
     history.appendChild(p);
 
-    setTimeout(updateSize.bind(input), 0);
-
   } else {
     label = p.querySelector('label');
     span = label.querySelector('span');
     input = label.querySelector('textarea');
   }
+
+  setTimeout(updateSize.bind(input), 0);
 
   span.innerText = line.formatElapsedTime(todayMidnight, false);
   if (p.classList.contains('changed')) {
