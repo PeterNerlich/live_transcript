@@ -150,7 +150,7 @@ class Line:
 		self.end = end
 		self.text = text
 		self.tid = tid
-		self.previously_associated_tids = previously_associated_tids
+		self.previously_associated_tids = set(previously_associated_tids)
 		self.uuid = uuid.uuid4()
 
 	@classmethod
@@ -167,7 +167,7 @@ class Line:
 			"start": datetime.datetime.fromtimestamp(self.start).isoformat(),
 			"end": datetime.datetime.fromtimestamp(self.end).isoformat(),
 			"text": self.text,
-			"previously_associated_tids": self.previously_associated_tids,
+			"previously_associated_tids": tuple(self.previously_associated_tids),
 		}, cls=UUIDEncoder)
 
 	def duplicate(self):
