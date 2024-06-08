@@ -50,7 +50,7 @@ class Translator:
 		assert target is not line, f"[Translator] line is the same object as target line! {line}, {target}"
 
 		try:
-			translation = await self.cached_send_request(line.text,
+			translation = await self.cached_send_request(line.text.strip(),
 				self.source_transcript.language,
 				self.target_transcript.language)
 			target.text = translation
@@ -158,8 +158,9 @@ class DeepLTranslator(Translator):
 		self._auth_key = auth_key
 
 	async def send_request(self, text: str, source_lang: str, target_lang: str):
-		if not text.strip():
-			return text.strip()
+		stripped = text.strip()
+		if not stripped:
+			return stripped
 
 		r = await asyncio.to_thread(requests.post,
 			url="https://api-free.deepl.com/v2/translate",
@@ -167,7 +168,7 @@ class DeepLTranslator(Translator):
 				"source_lang": source_lang.upper(),
 				"target_lang": target_lang.upper(),
 				"auth_key": self._auth_key,
-				"text": text,
+				"text": stripped,
 			},
 		)
 		return r.json()["translations"][0]["text"].strip()
