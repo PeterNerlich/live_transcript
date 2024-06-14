@@ -12,6 +12,7 @@ class WebsocketClient {
 		this.expecting = null;
 		this.intentConnected = false;
 		this.socket = null;
+		this.initiallyOnline = window.navigator.onLine;
 
 		this.queue = [];
 		this.waitingForConfirmation = {};
@@ -261,14 +262,23 @@ class WebsocketClient {
 				condition.recentPings.splice(0, condition.recentPings.length - 4);
 				condition.pingAvg = condition.recentPings.reduce((acc, c) => acc + c, 0) / condition.recentPings.length;
 			}).then(() => {
-				condition.ping = Date.now() - start;
+				const now = Date.now();
+				condition.ping = now - start;
+				condition.lastSuccessfulPing = now;
 				condition.recentPings.push(condition.ping);
 				condition.recentPings.splice(0, condition.recentPings.length - 3);
 				condition.pingAvg = condition.recentPings.reduce((acc, c) => acc + c, 0) / condition.recentPings.length;
 				condition.state = "alive";
 				//console.log(condition);
 			}).catch(e => {
+				const now = Date.now();
 				condition.state = e;
+				if (condition.lastSuccessfulPing && condition.lastSuccessfulPing - now >= 5000) {
+					this.socket.close();
+					if (this.intentConnected) {
+						this.connect(true);
+					}
+				}
 			});
 		} else if (this.socket) {
 			if (this.socket.readyState === 0) condition.state = "connecting";
@@ -399,6 +409,19 @@ class WebsocketClient {
 
 	setupHooks() {
 		const debounceHealthy = stateDebounce(state => this.handleEvent(state ? "becomesHealthy" : "becomesUnhealthy"), 5000, true);
+
+		if (this.initiallyOnline) {
+			window.addEventListener("offline", e => {
+				this.connectionCondition.state = "offline";
+			});
+			window.addEventListener("online", e => {
+				if (!this.socket || this.socket.readyState == 3) {
+					if (this.intentConnected) {
+						this.connect(true);
+					}
+				}
+			});
+		}
 
 		this.subscribe(["pong", "timeout", "_closed"], () => {
 			debounceHealthy.call(this, this.isHealthy());
