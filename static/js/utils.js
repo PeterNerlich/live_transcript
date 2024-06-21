@@ -195,6 +195,29 @@ function stateDebounce(func, wait, immediate, debug) {
 
 /****************************/
 
+function exponentialBackoff(start=1, max=null, scalar=2) {
+	if (start <= 0) throw Error("Start for exponential backoff cannot be 0 or negative");
+	let iterations = 0;
+	let lastCall = null;
+	return (reset=false) => {
+		const now = Date.now();
+		const call = lastCall === null ?
+			"first call" :
+			`last call ${now - lastCall} ms ago`;
+		lastCall = now;
+		const value = Math.pow(scalar, iterations++) * start;
+		console.log(`expBo value = ${value} = ${scalar}^${iterations} * ${start} (${call})`);
+		if (reset) {
+			console.log("  resetting iterations = 0");
+			iterations = 0;
+		}
+		if (max == null) return value;
+		return Math.min(max, value);
+	};
+}
+
+/****************************/
+
 if (Set.prototype.union === undefined) {
 	Set.prototype.union = function union(setB) {
 		const _union = new Set(this);

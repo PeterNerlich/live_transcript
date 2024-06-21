@@ -12,6 +12,7 @@ class WebsocketClient {
 		this.expecting = null;
 		this.intentConnected = false;
 		this.socket = null;
+		this.exponentialBackoff = exponentialBackoff(100, 20000, 1.5); // start at 100ms, cap at 20s, increase by 1.5 iteration
 		this.initiallyOnline = window.navigator.onLine;
 
 		this.queue = [];
@@ -67,7 +68,7 @@ class WebsocketClient {
 			if (this.intentConnected) {
 				this.connect(true);
 			}
-		}, 500);
+		}, this.exponentialBackoff());
 	}
 
 	leave() {
@@ -426,6 +427,7 @@ class WebsocketClient {
 			debounceHealthy.call(this, this.isHealthy());
 		});
 		this.subscribe("becomesHealthy", () => {
+			this.exponentialBackoff(true); // reset exponential backoff
 			/*for (let counter in this.waitingForConfirmation) {
 				if (!this.waitingForConfirmation[counter].ifUnhealthy) {
 					this.socket.send(this.waitingForConfirmation[counter].args);
