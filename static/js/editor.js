@@ -229,6 +229,10 @@ editor.subscribe(["pong", "becomesUnhealthy"], () => {
 });
 
 connectionQuality.addEventListener("click", e => {
+  if (editor.connectionCondition.lastSuccessfulPing && Date.now() - editor.connectionCondition.lastSuccessfulPing >= 5000) {
+    if (editor.socket) editor.socket.close();
+    editor.socket = null;
+  }
   editor.connect();
   document.body.classList.add("refreshing");
 });

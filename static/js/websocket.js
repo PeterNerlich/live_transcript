@@ -50,9 +50,7 @@ class WebsocketClient {
 	connect(keepIntent) {
 		if (!keepIntent) this.intentConnected = true;
 		if (this.socket && this.socket.readyState === 1) return;
-		if (!this.socket || this.socket.readyState > 1) {
-			this.socket = new WebSocket(this.address);
-		}
+		this.socket = new WebSocket(this.address);
 		this.socket.addEventListener("open", this.enterChannel.bind(this));
 		this.socket.addEventListener("close", this._handleClose.bind(this));
 		this.socket.addEventListener("message", this.handleMessage.bind(this));
@@ -60,7 +58,7 @@ class WebsocketClient {
 	}
 	close() {
 		this.intentConnected = false;
-		this.socket.close();
+		if (this.socket) this.socket.close();
 	}
 	_handleClose() {
 		if (this.expecting) this.expecting(null);
@@ -273,8 +271,9 @@ class WebsocketClient {
 			}).catch(e => {
 				const now = Date.now();
 				condition.state = e;
-				if (condition.lastSuccessfulPing && condition.lastSuccessfulPing - now >= 5000) {
-					this.socket.close();
+				if (condition.lastSuccessfulPing && now - condition.lastSuccessfulPing >= 5000) {
+					if (this.socket) this.socket.close();
+					this.socket = null;
 					if (this.intentConnected) {
 						this.connect(true);
 					}

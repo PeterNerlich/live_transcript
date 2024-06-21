@@ -335,6 +335,10 @@ source.subscribe(["pong", "becomesUnhealthy"], () => {
 });
 
 connectionQuality.addEventListener("click", e => {
+  if (source.connectionCondition.lastSuccessfulPing && Date.now() - source.connectionCondition.lastSuccessfulPing >= 5000) {
+    if (source.socket) source.socket.close();
+    source.socket = null;
+  }
   source.connect();
   document.body.classList.add("refreshing");
 });

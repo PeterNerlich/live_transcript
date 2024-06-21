@@ -116,6 +116,10 @@ reader.subscribe(["pong", "becomesUnhealthy"], () => {
 });
 
 connectionQuality.addEventListener("click", e => {
+  if (reader.connectionCondition.lastSuccessfulPing && Date.now() - reader.connectionCondition.lastSuccessfulPing >= 5000) {
+    if (reader.socket) reader.socket.close();
+    reader.socket = null;
+  }
   reader.connect();
   document.body.classList.add("refreshing");
 });
