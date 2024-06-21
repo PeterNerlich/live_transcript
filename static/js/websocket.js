@@ -50,10 +50,10 @@ class WebsocketClient {
 
 	connect(keepIntent) {
 		if (!keepIntent) this.intentConnected = true;
-		if (this.socket && this.socket.readyState === 1) return;
+		if (this.socket && this.socket.readyState <= 1) return;
 		this.socket = new WebSocket(this.address);
 		this.socket.addEventListener("open", this.enterChannel.bind(this));
-		this.socket.addEventListener("close", this._handleClose.bind(this));
+		this.socket.addEventListener("close", this._handleClose.bind(this, this.socket));
 		this.socket.addEventListener("message", this.handleMessage.bind(this));
 		this._keepaliveID = 0;
 	}
@@ -61,7 +61,11 @@ class WebsocketClient {
 		this.intentConnected = false;
 		if (this.socket) this.socket.close();
 	}
-	_handleClose() {
+	_handleClose(socket) {
+		if (socket !== this.socket) {
+			console.log("_handleClose() called for a stale socket", socket);
+			return;
+		}
 		if (this.expecting) this.expecting(null);
 		this.handleEvent("_closed");
 		window.setTimeout(() => {
@@ -105,7 +109,8 @@ class WebsocketClient {
 				.then(() => this.connectionCondition.channel = `/${this.role}/${this.session}/${this.language}`)
 				.catch(() => {
 					delete this.connectionCondition.channel;
-					if (this.intentConnected) return this.enterChannel();
+					//if (this.intentConnected) return this.enterChannel();
+					this.socket.close();
 				});
 		}
 		return getClientVersion().then(helper).catch(helper.bind(this, "unknown"));
@@ -253,7 +258,8 @@ class WebsocketClient {
 
 	checkConnection() {
 		const condition = this.connectionCondition;
-		if (this.socket && this.socket.readyState === 1) {
+		const socket = this.socket;
+		if (socket && socket.readyState === 1) {
 			const start = Date.now();
 			this.ping(this._keepaliveID++, () => {
 				condition.ping = Date.now() - start;
@@ -261,6 +267,10 @@ class WebsocketClient {
 				condition.recentPings.splice(0, condition.recentPings.length - 4);
 				condition.pingAvg = condition.recentPings.reduce((acc, c) => acc + c, 0) / condition.recentPings.length;
 			}).then(() => {
+				if (socket !== this.socket) {
+					console.log("Pong for stale socket");
+					return;
+				}
 				const now = Date.now();
 				condition.ping = now - start;
 				condition.lastSuccessfulPing = now;
@@ -270,6 +280,10 @@ class WebsocketClient {
 				condition.state = "alive";
 				//console.log(condition);
 			}).catch(e => {
+				if (socket !== this.socket) {
+					console.log("Ping timed out for stale socket");
+					return;
+				}
 				const now = Date.now();
 				condition.state = e;
 				if (condition.lastSuccessfulPing && now - condition.lastSuccessfulPing >= 5000) {
