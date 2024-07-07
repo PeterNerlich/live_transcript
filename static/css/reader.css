@@ -19,6 +19,10 @@ body.error.refreshing {
 #history {
   padding: 1em 0;
   font-size: 1.2em;
+  --min-space: .4em;
+  --max-space: 5em;
+  --max-seconds: 60;
+  --curve-exponent: 3.0;
 }
 @media screen and (min-width: 600px) {
   #history {
@@ -31,13 +35,13 @@ body.error.refreshing {
   }
 }
 #history p {
-  --min-space: .4em;
-  --max-space: 5em;
-  --max-seconds: 60;
-  --curve-exponent: 3.0;
   margin: var(--min-space);
   margin-top: calc(var(--min-space) + max(var(--min-space), min(var(--max-space), calc(var(--max-space) - pow(1 - var(--pause-before) / var(--max-seconds), var(--curve-exponent)) * var(--max-space)))));
   line-height: 1.3;
+}
+.no-css-pow #history p {
+  /* fallback in case pow() is not implemented */
+  margin-top: calc(var(--min-space) + max(var(--min-space), min(var(--max-space), calc(var(--max-space) - var(--pause-pow-value) * var(--max-space)))));
 }
 #history p:last-of-type {
   font-size: 1.2em;

@@ -10,6 +10,8 @@ const connectionQuality = document.getElementById("connection-quality");
 const history = document.getElementById("history");
 const recognition = document.getElementById("recognition");
 
+if (!hasCSSPow) html.classList.add("no-css-pow");
+
 function updateLine(line) {
   let p = history.querySelector(`p[tid="${line.tid}"]`);
   if (p === null) {
@@ -49,49 +51,104 @@ function updateLine(line) {
   return p;
 }
 function sortLines(lines) {
+  const start = Date.now();
   const ps = Array.from(history.children);
   const indices = Object.fromEntries(lines.map((l, i) => [l.tid, i]));
   ps.sort((a,b) => indices[a.getAttribute("tid")] - indices[b.getAttribute("tid")]);
   history.replaceChildren.apply(history, ps);
+  const split = Date.now();
   let prev = null;
+  const histStyle = getComputedStyle(history);
+  const maxSeconds = histStyle.getPropertyValue("--max-seconds");
+  const curveExponent = histStyle.getPropertyValue("--curve-exponent");
   ps.forEach((p, i) => {
     const line = lines[i];
     if (prev !== null) {
-      p.style.setProperty("--pause-before", `${Math.max(line.start - prev.end, 0) / 1000}`);
+      const pause = Math.max(line.start - prev.end, 0) / 1000;
+      p.style.setProperty("--pause-before", pause);
+      if (!hasCSSPow) {
+        const fallback = Math.pow(1 - pause / maxSeconds, curveExponent);
+        p.style.setProperty("--pause-pow-value", fallback);
+      }
     }
     prev = line;
   });
+  const end = Date.now();
+  console.log(`sortLines(#${lines.length}) took ${(end-start)/1000} s, ${(end-split)/1000} s of it to set --pause-before (${(end-split)/(end-start)*100} %)`);
 }
+
+const enqueueSortLines = (debug => {
+  let queued = false;
+  let promise = null;
+  return lines => {
+    queued = lines; // update queued in any case
+    if (!promise) {
+      if (debug) console.log(`enqueueSortLines()`);
+      promise = new Promise((res, rej) => {
+        window.requestAnimationFrame(timestamp => {
+          if (debug) console.log(`sorting lines now`);
+          sortLines(queued);
+          queued = false;
+          promise = null; // clear promise
+          res({
+            timestamp: timestamp,
+            sorted: queued,
+          });
+        });
+      });
+    } else if (debug) {
+      console.log(`not queuing sortLines again`);
+    }
+    return promise;
+  };
+})(false);
 const {calculateShouldScroll, scrollToBottom} = setupStickyScroll(document.body.parentElement);
+
+const enqueueScrollToBottom = (debug => {
+  let last = -1;
+  return ({timestamp, sorted}) => {
+    if (timestamp > last) {
+      if (debug) console.log(`enqueueSortLines({ts: ${JSON.stringify(timestamp)}}) sorting now!`);
+      scrollToBottom();
+      last = timestamp;
+    } else {
+      if (debug) console.log(`enqueueSortLines({ts: ${JSON.stringify(timestamp)}}) already sorted`);
+    }
+  };
+})(false);
 
 const reader = new WebsocketReader(socketURL, "default", lang);
 const transcript = new Transcript(null, lang);
 
 logAll(reader, "reader", ["pong"]);
 
+let blockCalculateShouldScroll = false;
 reader.subscribe("existing", msg => {
   const lines = JSON.parse(msg.lines);
   calculateShouldScroll();
+  blockCalculateShouldScroll = true;
   lines.forEach(transcript.addOrUpdateLine.bind(transcript));
-  sortLines(transcript.linesSorted());
-  scrollToBottom();
+  enqueueSortLines(transcript.linesSorted())
+    .then(enqueueScrollToBottom)
+    .then(() => {
+      blockCalculateShouldScroll = false;
+    });
 });
 reader.subscribe(["new", "changed"], msg => {
   transcript.addOrUpdateLine(msg.line);
 });
 
 transcript.subscribe("new", line => {
-  calculateShouldScroll();
+  if (!blockCalculateShouldScroll) calculateShouldScroll();
   updateLine(line);
-  sortLines(transcript.linesSorted());
-  scrollToBottom();
+  enqueueSortLines(transcript.linesSorted())
+    .then(enqueueScrollToBottom);
 });
 transcript.subscribe("changed", line => {
-  let shouldScroll = calculateShouldScroll();
-  console.log(`transcript line changed: ${shouldScroll}`);
+  if (!blockCalculateShouldScroll) calculateShouldScroll();
   updateLine(line);
-  sortLines(transcript.linesSorted());
-  scrollToBottom();
+  enqueueSortLines(transcript.linesSorted())
+    .then(enqueueScrollToBottom);
 });
 
 reader.connect();

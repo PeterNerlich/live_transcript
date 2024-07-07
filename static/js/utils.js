@@ -133,6 +133,24 @@ function setupStickyScroll(elem, clearance, debug) {
 /**************************************/
 
 
+const hasCSSPow = (debug => {
+	const start = Date.now();
+	// test whether pow() exists in CSS or just results in empty value
+	const div = document.createElement("div");
+	div.style.setProperty("opacity", "pow(0.5, 2)");
+	document.body.appendChild(div);
+	const opacity = getComputedStyle(div).getPropertyValue("opacity");
+	const hasPow = opacity == "0.25";
+	div.remove();
+	const end = Date.now();
+	if (debug) console.log(`[hasCSSPow] ${hasPow} (opacity is ${JSON.stringify(opacity)}, check took ${(end-start)/1000} s)`);
+	return hasPow;
+})(true);
+
+
+/**************************************/
+
+
 function debounce(func, wait, immediate) {
 	let timeout;
 	return function() {
