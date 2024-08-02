@@ -112,7 +112,7 @@ def compose_docroot(render_dir, template_dir, static_dir=None, debug=False):
 		all_replaced.extend(replaced)
 		all_kept.extend(kept)
 
-	print(f"\nReplaced {len(all_replaced)} and kept {len(kept)} links in total (replaced {len(set(replaced))} and kept {len(set(kept))} unique links)")
+	print(f"\nReplaced {len(all_replaced)} and kept {len(all_kept)} links in total (replaced {len(set(all_replaced))} and kept {len(set(all_kept))} unique links)")
 	if debug:
 		nl = "\n\t"
 		lines = map(lambda x: f"{x[1]} ×\t{repr(x[0])}", aggregate(all_replaced).items())
