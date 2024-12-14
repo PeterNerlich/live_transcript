@@ -3,7 +3,10 @@ const queryArgs = new URLSearchParams(window.location.search);
 const socketURL = `${location.protocol.replace('http','ws')}//${queryArgs.get('debug') === null ? location.host+'/socket' : location.hostname+':8765'}`;
 
 const availableLanguages = ["uk", "en", "ro", "de"];
-const lang = queryArgs.get("lang") || "uk";
+const lang = queryArgs.get("lang") || localStorage.getItem("language") || "uk";
+if (localStorage.getItem("language") === null) {
+  localStorage.setItem("language", lang);
+}
 
 const html = document.body.parentElement;
 const connectionQuality = document.getElementById("connection-quality");
@@ -201,6 +204,7 @@ availableLanguages.forEach(l => {
   ulLangs.appendChild(li);
 
   li.addEventListener("click", () => {
+    localStorage.setItem("language", l);
     queryArgs.set("lang", l);
     location.search = `?${queryArgs.toString()}`;
   });
