@@ -1,6 +1,9 @@
 
 const queryArgs = new URLSearchParams(window.location.search);
-const socketURL = `${location.protocol.replace('http','ws')}//${queryArgs.get('debug') === null ? location.host+'/socket' : location.hostname+':8765'}`;
+const debug = queryArgs.get('debug') !== null;
+const protocol = location.protocol.replace('http','ws').replace('file','ws');
+const host = location.protocol === "file:" ? "localhost" : location.host;
+const socketURL = `${protocol}//${!debug ? host+'/socket' : host+':8765'}`;
 
 const availableLanguages = ["uk", "en", "ro", "de"];
 const browserlang = navigator.languages.find(lang => availableLanguages.includes(lang));
