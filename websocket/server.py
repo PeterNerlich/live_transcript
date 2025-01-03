@@ -79,12 +79,15 @@ def broadcast_update(message_fn: callable, role=None, session=None, language=Non
 			v
 			for d in dictionaries
 			for k,v in d.items()
-			if k == selector or k in selector or selector is None
+			if selector is None or k == selector or k in selector
 		]
 	def helper(data):
 		target = set()
-		for sockets in matching(matching(matching(channels, role), session), language):
-			target.update(sockets)
+		try:
+			for sockets in matching(matching(matching(channels, role), session), language):
+				target.update(sockets)
+		except Exception as e:
+			print(f"Failed compiling matching targets for role={role!r} session={session!r} language={language!r}\n{e!r}")
 		websockets.broadcast(target, message_fn(data))
 	return helper
 
