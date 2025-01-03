@@ -140,6 +140,10 @@ class NonexistantChannelException(TCException):
 		super(UnknownCommandException, self).__init__(websocket, f"Channel {str(channel)} doesn't exist")
 
 
+editor_broadcast = broadcast_update(
+	lambda d: args(["editor_broadcast", "from", d["sender"], d["msg"]]),
+	["source", "editor"], default_session, language=None)
+
 #websockets.broadcast(connected, "Hello!")
 
 async def handler(websocket):
@@ -178,12 +182,12 @@ async def handler(websocket):
 		elif role == "source":
 			await websocket.send(args(["Authentication", "required"]))
 			cmd = await expect(["auth"], websocket)
-			expected = ["submit", "leave"]
+			expected = ["submit", "leave", "editor_broadcast"]
 		elif role == "editor":
 			await websocket.send(args(["Authentication", "required"]))
 			cmd = await expect(["auth"], websocket)
 			await websocket.send(args(["existing", "transcript", f"[{', '.join(map(str, transcript.lines_sorted))}]"]))
-			expected = ["submit", "delete", "change", "split", "merge", "leave"]
+			expected = ["submit", "delete", "change", "split", "merge", "leave", "editor_broadcast"]
 		channels[role][session][language].add(websocket)
 
 		while True:
@@ -212,6 +216,12 @@ async def handler(websocket):
 			elif cmd["cmd"] == "merge":
 				line = transcript.merge_lines(cmd["tid_one"], cmd["tid_two"])
 				await websocket.send(args(["confirm", cmd["counter"], str(line)]))
+			elif cmd["cmd"] == "editor_broadcast":
+				editor_broadcast({
+					"msg": cmd["msg"],
+					"sender": websocket.id,
+				})
+				await websocket.send(args(["confirm", cmd["counter"]]))
 			else:
 				logger.info("[%s] Unhandled but expected command: %s", websocket.id, cmd)
 				print(f"Unhandled but expected command: {cmd}")
@@ -376,6 +386,16 @@ def parse_command(verbs, websocket=None):
 			"counter": verbs[1],
 			"tid_one": verbs[3],
 			"tid_two": verbs[5],
+		}
+
+	if verbs[0] == "editor_broadcast":
+		# editor_broadcast <counter> <msg>
+		if len(verbs) < 3:
+			raise TooFewArgumentsException(websocket, verbs)
+		return {
+			"cmd": "editor_broadcast",
+			"counter": verbs[1],
+			"msg": verbs[2],
 		}
 
 	raise UnknownCommandException(verbs[0])
