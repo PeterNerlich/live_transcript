@@ -3,9 +3,13 @@
 *.vtt
 *.txt
 version.json
+*.log
 
 !requirements.txt
+!requirements-dev.txt
 
 docroot
+templates/copy-*.html
 
+venv
 **/__pycache__
