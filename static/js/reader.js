@@ -5,6 +5,13 @@ const socketURL = `${location.protocol.replace('http','ws')}//${queryArgs.get('d
 const availableLanguages = ["uk", "en", "ro", "de"];
 const browserlang = navigator.languages.find(lang => availableLanguages.includes(lang));
 const lang = queryArgs.get("lang") || localStorage.getItem("language") || browserlang || "uk";
+if (queryArgs.has("lang")) {
+  localStorage.setItem("language", lang);
+  queryArgs.delete("lang");
+  const redirect = new URL(location.href);
+  redirect.search = queryArgs.toString();
+  window.history.replaceState(window.history.state, "", redirect.toString());
+}
 
 const html = document.body.parentElement;
 const connectionQuality = document.getElementById("connection-quality");
@@ -203,7 +210,9 @@ availableLanguages.forEach(l => {
 
   li.addEventListener("click", () => {
     localStorage.setItem("language", l);
-    queryArgs.set("lang", l);
-    location.search = `?${queryArgs.toString()}`;
+    // Remove lang override
+    queryArgs.delete("lang", l);
+    // Triggers reload even if same string
+    location.search = queryArgs.toString();
   });
 });
