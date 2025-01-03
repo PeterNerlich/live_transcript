@@ -149,6 +149,20 @@ function newManualLine(e) {
   transcript.addLine(line);
 }
 
+function newClipboardLine(e) {
+  const start = new Date();
+  const end = start;
+  navigator.clipboard.readText().then(text => {
+    const line = new Line({tid: new UUIDv4(), start: start, end: end, text: text});
+    calculateShouldScroll();
+    const p = updateLine(line);
+    scrollToBottom();
+    e.preventDefault();
+    editor.submit(line.toJSON());
+    transcript.addLine(line);
+  });
+}
+
 const enqueueUpdateLine = (debug => {
   let timeout = {};
   return e => {
@@ -178,6 +192,7 @@ keyhints.addHint({ctrlKey: false, shiftKey: false, key: "Enter"}, submitChanges,
 keyhints.addHint({ctrlKey: false, shiftKey: true, key: "Enter"}, lineBreak, "⇧+⏎", "New Line", 21, true);
 keyhints.addHint({key: "Escape"}, discardChanges, "ESC", "Discard changes", 22, true);
 keyhints.addHint({composed: true, ctrlKey: true, key: "l", type: "keydown"}, newManualLine, "CTRL+L", "Manually insert a new line now", 26, true);
+keyhints.addHint({composed: true, ctrlKey: true, shiftKey: true, key: "V", type: "keydown"}, newClipboardLine, "CTRL+SHIFT+V", "Insert a new line from Clipboard", 29, true);
 
 keyhints.addHint({ctrlKey: false}, enqueueUpdateLine, "", "Update line", 30, true, true);
 
