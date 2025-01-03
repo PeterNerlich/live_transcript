@@ -166,7 +166,6 @@ async def handler(websocket):
 			translators[language].unpause()
 			logger.info("[%s] unpausing translator for %s of %s", websocket.id, language, session)
 			print(f"unpausing translator for {language} of {session}")
-		channels[role][session][language].add(websocket)
 		await websocket.send(args(["confirm", cmd["counter"], cmd["channel"]]))
 
 		connected.add(websocket)
@@ -182,6 +181,7 @@ async def handler(websocket):
 			cmd = await expect(["auth"], websocket)
 			await websocket.send(args(["existing", "transcript", f"[{', '.join(map(str, transcript.lines_sorted))}]"]))
 			expected = ["submit", "delete", "change", "split", "merge", "leave"]
+		channels[role][session][language].add(websocket)
 
 		while True:
 			cmd = await expect(expected, websocket)
