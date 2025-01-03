@@ -64,8 +64,8 @@ class Translator:
 				"translation": translation,
 			})
 		except Exception as e:
-			self.logger.error("failed to translate: %s", e)
-			print(f"failed to translate: {e}")
+			self.logger.exception("failed to translate:")
+			print(f"failed to translate: {e!r}")
 			self.handle_event("error", {
 				"original_line": line,
 				"target_line": target,
@@ -151,27 +151,67 @@ class Translator:
 
 
 class DeepLTranslator(Translator):
-	def __init__(self, source_transcript, target_transcript, auth_key: str = None, paused=False):
+	def __init__(self, source_transcript, target_transcript, auth_key: str = None, backup_auth_key: str = None, paused=False):
 		super().__init__(source_transcript, target_transcript, paused)
 		if auth_key is None:
 			auth_key = os.environ.get("DEEPL_AUTH_KEY")
+		if backup_auth_key is None:
+			backup_auth_key = os.environ.get("DEEPL_AUTH_KEY_BACKUP")
 		self._auth_key = auth_key
+		self._backup_auth_key = backup_auth_key
+		self._auth_failover = False
 
 	async def send_request(self, text: str, source_lang: str, target_lang: str):
 		stripped = text.strip()
 		if not stripped:
 			return stripped
 
-		r = await asyncio.to_thread(requests.post,
-			url="https://api-free.deepl.com/v2/translate",
-			data={
-				"source_lang": source_lang.upper(),
-				"target_lang": target_lang.upper(),
-				"auth_key": self._auth_key,
-				"text": stripped,
-			},
-		)
-		return r.json()["translations"][0]["text"].strip()
+		try:
+			auth_key = self._auth_key if not self._auth_failover else self._backup_auth_key
+			r = await asyncio.to_thread(requests.post,
+				url="https://api-free.deepl.com/v2/translate",
+				data={
+					"source_lang": source_lang.upper(),
+					"target_lang": target_lang.upper(),
+					"auth_key": auth_key,
+					"text": stripped,
+				},
+			)
+			if r.status_code == 403:
+				raise self.InvalidAuthKey(self._auth_failover)
+			if r.status_code == 413:
+				raise self.RequestSizeExceedsLimit(self._auth_failover)
+			if r.status_code in (429, 529):
+				raise self.TooManyRequests(self._auth_failover)
+			if r.status_code == 456:
+				raise self.QuotaExceeded(self._auth_failover)
+			if r.status_code == 500:
+				raise self.InternalError(self._auth_failover)
+			return r.json()["translations"][0]["text"].strip()
+		except self.DeepLException:
+			if self._auth_failover or not self._backup_auth_key:
+				raise
+			# try again
+			self._auth_failover = True
+			return await self.send_request(text, source_lang, target_lang)
+
+
+	class DeepLException(Exception):
+		def __init__(self, on_failover=False):
+			self._on_failover = on_failover
+		def __repr__(self):
+			fo = " (on failover)" if self._on_failover else ""
+			return f"{type(self).__name__}{fo}"
+	class InvalidAuthKey(DeepLException):
+		pass
+	class RequestSizeExceedsLimit(DeepLException):
+		pass
+	class TooManyRequests(DeepLException):
+		pass
+	class QuotaExceeded(DeepLException):
+		pass
+	class InternalError(DeepLException):
+		pass
 
 class DummyTranslator(Translator):
 	async def send_request(self, text: str, source_lang: str, target_lang: str):
