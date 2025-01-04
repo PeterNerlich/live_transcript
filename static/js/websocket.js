@@ -32,6 +32,7 @@ class WebsocketClient {
 			version: [],
 			becomesHealthy: [],
 			becomesUnhealthy: [],
+			editor_broadcast: [],
 			_closed: [],
 		};
 		this.setupHooks();
@@ -95,7 +96,7 @@ class WebsocketClient {
 				throw new EmptyMessageError(this.websocket);
 			}
 			const parsed = this.parseMessage(verbs);
-			if ((["left", "new", "deleted", "changed", "split", "merged", "existing"]).includes(parsed.msg)) {
+			if ((["left", "new", "deleted", "changed", "split", "merged", "existing", "editor_broadcast"]).includes(parsed.msg)) {
 				this.handleEvent(parsed.msg, parsed);
 			} else {
 				throw new UnknownMessageError(verbs[0]);
@@ -250,6 +251,17 @@ class WebsocketClient {
 				"msg": "merged",
 				"tid_one": verbs[2],
 				"line": verbs[4],
+			}
+		}
+
+		if (verbs[0] === "editor_broadcast") {
+			// editor_broadcast from <sender> <msg>
+			if (verbs.length < 4) throw new IncompleteMessageError(this.websocket, verbs);
+			if (verbs[1] !== "from") throw new UnexpectedKeywordError(this.websocket, "from", verbs[1], verbs);
+			return {
+				"msg": "editor_broadcast",
+				"sender": verbs[2],
+				"message": verbs[3],
 			}
 		}
 
@@ -503,6 +515,10 @@ class WebsocketSource extends WebsocketClient {
 		if (typeof lines === 'string') lines = [lines];
 		return this.sendAndWaitForConfirm(["submit", "lines"].concat(lines)).then(console.log).catch(console.error);
 	}
+
+	editorBroadcast(msg) {
+		return this.sendAndWaitForConfirm(["editor_broadcast", msg]).then(console.log).catch(console.error);
+	}
 }
 
 class WebsocketEditor extends WebsocketClient {
@@ -537,6 +553,11 @@ class WebsocketEditor extends WebsocketClient {
 
 	merge(one, two) {
 		return this.sendAndWaitForConfirm(["merge", "lines", one, "and", two]).then(console.log).catch(console.error);
+	}
+
+	editorBroadcast(msg) {
+		console.warn("editor_broadcast", msg);
+		return this.sendAndWaitForConfirm(["editor_broadcast", msg]).then(console.log).catch(console.error);
 	}
 }
 

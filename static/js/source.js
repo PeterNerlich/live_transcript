@@ -7,6 +7,7 @@ const socketURL = `${protocol}//${!debug ? host+'/socket' : host+':8765'}`;
 
 const availableLanguages = ["uk", "en", "ro", "de"];
 const lang = queryArgs.get("lang") || "de";
+let allowRemote = true;
 
 const connectionQuality = document.getElementById("connection-quality");
 const history = document.getElementById("transcript");
@@ -77,7 +78,7 @@ function goToPreviousLine(e) {
   if (p && p.previousElementSibling) {
     p.previousElementSibling.querySelector('textarea').focus();
   }
-  e.preventDefault();
+  if (e) e.preventDefault();
 }
 function goToNextLine(e) {
   const focus = document.activeElement;
@@ -85,7 +86,7 @@ function goToNextLine(e) {
   if (p && p.nextElementSibling) {
     p.nextElementSibling.querySelector('textarea').focus();
   }
-  e.preventDefault();
+  if (e) e.preventDefault();
 }
 
 function submitChanges(e) {
@@ -103,7 +104,7 @@ function submitChanges(e) {
     }).catch(() => {
       if (p) p.classList.remove("pending");
     });
-    e.preventDefault();
+    if (e) e.preventDefault();
   }
 }
 
@@ -117,7 +118,7 @@ function discardChanges(e) {
     if (p) p.classList.remove("changed");
     setTimeout(updateSize.bind(focus), 0);
     setTimeout(updateLineStatus.bind(this, tid), 0);
-    e.preventDefault();
+    if (e) e.preventDefault();
   }
 }
 
@@ -128,12 +129,12 @@ function lineBreak(e) {
     focus.setRangeText("\n", focus.selectionStart, focus.selectionEnd, "end");
     enqueueUpdateLine({target: focus});
   }
-  e.preventDefault();
+  if (e) e.preventDefault();
 }
 
 function restartLine(e) {
   stt.restart();
-  e.preventDefault();
+  if (e) e.preventDefault();
 }
 
 function newManualLine(e) {
@@ -145,7 +146,7 @@ function newManualLine(e) {
   scrollToBottom();
   const input = p.querySelector("textarea");
   if (input) input.focus();
-  e.preventDefault();
+  if (e) e.preventDefault();
   source.submit(line.toJSON());
   transcript.addLine(line);
 }
@@ -158,7 +159,7 @@ function newClipboardLine(e) {
     calculateShouldScroll();
     const p = updateLine(line);
     scrollToBottom();
-    e.preventDefault();
+    if (e) e.preventDefault();
     source.submit(line.toJSON());
     transcript.addLine(line);
   });
@@ -256,10 +257,15 @@ const stt = new SpeechToText(lang);
 const source = new WebsocketEditor(socketURL, "default", lang);
 const transcript = new Transcript(null, lang);
 
+stt.subscribe("start", () => {
+  editorBroadcast("stt started");
+});
+
 stt.subscribe("stop", () => {
   if (!recognition.classList.contains('final')) {
     recognition.innerText = "";
   }
+  editorBroadcast("stt stopped");
 });
 
 //let start = session.start || new Date();
@@ -279,6 +285,7 @@ stt.subscribe("intermediates", intermediates => {
   }
   calculateShouldScroll();
   displayRecognition(out, false);
+  editorBroadcast("stt intermediates", out);
   scrollToBottom();
 });
 
@@ -351,6 +358,40 @@ source.subscribe(["pong", "becomesUnhealthy"], () => {
   connectionQuality.classList.remove.apply(connectionQuality.classList, classes.filter(c => c !== current));
   connectionQuality.querySelector('span').innerText = `${ping} ms`;
 });
+
+source.subscribe(["editor_broadcast"], data => {
+  try {
+    message = JSON.parse(data["message"]);
+    switch (message[0]) {
+      case "restartLine":
+        if (allowRemote) {
+          console.log("restartLine as requested", restartLine());
+        }
+        break;
+      case "stopRecognition":
+        if (allowRemote) {
+          console.log("stopRecognition as requested", stopRecognition());
+        }
+        break;
+      case "stt started":
+      case "stt stopped":
+      case "stt intermediates":
+        break;
+      default:
+        console.warn("unknown editor_broadcast", data);
+    }
+  } catch (e) {
+    // handle plain data
+    switch (data) {
+      default:
+        console.warn("unknown editor_broadcast (plain)", data, e);
+    }
+  }
+});
+
+function editorBroadcast() {
+  source.editorBroadcast(JSON.stringify(Array.from(arguments)));
+}
 
 connectionQuality.addEventListener("click", e => {
   if (source.connectionCondition.lastSuccessfulPing && Date.now() - source.connectionCondition.lastSuccessfulPing >= 5000) {

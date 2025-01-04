@@ -10,6 +10,7 @@ const lang = queryArgs.get("lang") || "de";
 
 const connectionQuality = document.getElementById("connection-quality");
 const history = document.getElementById("transcript");
+const recognition = document.getElementById("recognition");
 const todayMidnight = new Date();
 todayMidnight.setHours(0,0,0,0);
 
@@ -76,7 +77,7 @@ function goToPreviousLine(e) {
   if (p && p.previousElementSibling) {
     p.previousElementSibling.querySelector('textarea').focus();
   }
-  e.preventDefault();
+  if (e) e.preventDefault();
 }
 function goToNextLine(e) {
   const focus = document.activeElement;
@@ -84,7 +85,7 @@ function goToNextLine(e) {
   if (p && p.nextElementSibling) {
     p.nextElementSibling.querySelector('textarea').focus();
   }
-  e.preventDefault();
+  if (e) e.preventDefault();
 }
 
 function submitChanges(e) {
@@ -102,7 +103,7 @@ function submitChanges(e) {
     }).catch(() => {
       if (p) p.classList.remove("pending");
     });
-    e.preventDefault();
+    if (e) e.preventDefault();
   }
 }
 
@@ -116,7 +117,7 @@ function discardChanges(e) {
     if (p) p.classList.remove("changed");
     setTimeout(updateSize.bind(focus), 0);
     setTimeout(updateLineStatus.bind(this, tid), 0);
-    e.preventDefault();
+    if (e) e.preventDefault();
   }
 }
 
@@ -127,12 +128,12 @@ function lineBreak(e) {
     focus.setRangeText("\n", focus.selectionStart, focus.selectionEnd, "end");
     enqueueUpdateLine({target: focus});
   }
-  e.preventDefault();
+  if (e) e.preventDefault();
 }
 
 function restartLine(e) {
   stt.restart();
-  e.preventDefault();
+  if (e) e.preventDefault();
 }
 
 function newManualLine(e) {
@@ -144,7 +145,7 @@ function newManualLine(e) {
   scrollToBottom();
   const input = p.querySelector("textarea");
   if (input) input.focus();
-  e.preventDefault();
+  if (e) e.preventDefault();
   editor.submit(line.toJSON());
   transcript.addLine(line);
 }
@@ -157,7 +158,7 @@ function newClipboardLine(e) {
     calculateShouldScroll();
     const p = updateLine(line);
     scrollToBottom();
-    e.preventDefault();
+    if (e) e.preventDefault();
     editor.submit(line.toJSON());
     transcript.addLine(line);
   });
@@ -194,9 +195,42 @@ keyhints.addHint({key: "Escape"}, discardChanges, "ESC", "Discard changes", 22, 
 keyhints.addHint({composed: true, ctrlKey: true, key: "l", type: "keydown"}, newManualLine, "CTRL+L", "Manually insert a new line now", 26, true);
 keyhints.addHint({composed: true, ctrlKey: true, shiftKey: true, key: "V", type: "keydown"}, newClipboardLine, "CTRL+SHIFT+V", "Insert a new line from Clipboard", 29, true);
 
+const ctrlEnter = keyhints.addHint({composed: true, ctrlKey: true, key: "Enter", type: "keydown"}, broadcastRestartLine, "CTRL+⏎", "Force recognition remotely to start new line", 24, true);
+keyhints.addHint({composed: true, ctrlKey: true, code: "Space", type: "keydown"}, broadcastStopRecognition, "CTRL+SPACE", "Pause recognition remotely", 24, true);
+
 keyhints.addHint({ctrlKey: false}, enqueueUpdateLine, "", "Update line", 30, true, true);
 
 const {calculateShouldScroll, scrollToBottom} = setupStickyScroll(document.body.parentElement);
+
+function displayRecognition(results, final) {
+  let i;
+  for (i = 0; i < results.length; i++) {
+    if (i < recognition.children.length) {
+      recognition.children[i].innerText = results[i].transcript;
+      recognition.children[i].style.opacity = results[i].confidence * .5 + .5;
+    } else {
+      let span = document.createElement('span');
+      span.innerText = results[i].transcript;
+      span.style.opacity = results[i].confidence * .5 + .5;
+      recognition.appendChild(span);
+    }
+  }
+  while (i < recognition.children.length) {
+    recognition.removeChild(recognition.children[i]);
+    i++;
+  }
+  if (final) {
+    recognition.classList.add('final');
+    recognition.classList.remove("long");
+  } else {
+    recognition.classList.remove('final');
+    if (recognition.innerText.length > 200) {
+      recognition.classList.add("long");
+    } else {
+      recognition.classList.remove("long");
+    }
+  }
+}
 
 const editor = new WebsocketEditor(socketURL, "default", lang);
 const transcript = new Transcript(null, lang);
@@ -245,6 +279,45 @@ editor.subscribe(["pong", "becomesUnhealthy"], () => {
   connectionQuality.classList.remove.apply(connectionQuality.classList, classes.filter(c => c !== current));
   connectionQuality.querySelector('span').innerText = `${ping} ms`;
 });
+
+editor.subscribe(["editor_broadcast"], data => {
+  console.log("editor_broadcast", data);
+  try {
+    message = JSON.parse(data["message"]);
+    switch (message[0]) {
+      case "stt started":
+        recognition.innerText = "…";
+        break;
+      case "stt stopped":
+        recognition.innerText = "";
+        break;
+      case "stt intermediates":
+        displayRecognition(message[1]);
+        break;
+      case "restartLine":
+      case "stopRecognition":
+        break;
+      default:
+        console.warn("unknown editor_broadcast", data);
+    }
+  } catch (e) {
+    // handle plain data
+    switch (data) {
+      default:
+        console.warn("unknown editor_broadcast (plain)", data);
+    }
+  }
+});
+
+function broadcastRestartLine() {
+  editorBroadcast("restartLine");
+}
+function broadcastStopRecognition() {
+  editorBroadcast("stopRecognition");
+}
+function editorBroadcast() {
+  editor.editorBroadcast(JSON.stringify(Array.from(arguments)));
+}
 
 connectionQuality.addEventListener("click", e => {
   if (editor.connectionCondition.lastSuccessfulPing && Date.now() - editor.connectionCondition.lastSuccessfulPing >= 5000) {
